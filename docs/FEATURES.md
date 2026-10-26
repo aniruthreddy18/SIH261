@@ -5,7 +5,7 @@
 | Area | Status | Notes |
 |---|---|---|
 | Authentication (scrypt, hashed session tokens, rate limiting) | ✅ | Integration and E2E tested |
-| Server-side RBAC for 5 roles, institution isolation | ✅ | Pages, actions, routes, exports; unit, integration and E2E tests |
+| Server-side RBAC for 4 roles (applicant, scrutiny & verification officer, senior official, administrator), institution isolation | ✅ | Pages, actions, routes, exports; unit, integration and E2E tests |
 | Command Centre with DB-derived metrics | ✅ | No hard-coded numbers |
 | Application creation (server reference), templates, programmes | ✅ | Two configurable demo templates |
 | Explicit status state machine | ✅ | Invalid transitions rejected |

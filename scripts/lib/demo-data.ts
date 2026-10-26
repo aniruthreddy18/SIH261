@@ -31,8 +31,7 @@ export const INSTITUTIONS: DemoInstitution[] = [
 
 export const STAFF = [
   { email: "admin@aegis.demo", name: "Asha Verma", role: "ADMIN" as const, designation: "Rules & Systems Administrator" },
-  { email: "scrutiny@aegis.demo", name: "Vikram Iyer", role: "SCRUTINY_OFFICER" as const, designation: "Scrutiny Officer" },
-  { email: "verification@aegis.demo", name: "Meera Nair", role: "VERIFICATION_OFFICER" as const, designation: "Verification & Compliance Officer" },
+  { email: "scrutiny@aegis.demo", name: "Vikram Iyer", role: "SCRUTINY_OFFICER" as const, designation: "Scrutiny & Verification Officer" },
   { email: "senior@aegis.demo", name: "Dr. Arjun Menon", role: "SENIOR_OFFICIAL" as const, designation: "Competent Authority (Demo)" },
 ];
 
@@ -144,7 +143,7 @@ export const APPLICATIONS: DemoApplication[] = [
   },
   {
     slug: "northfield", scenario: "Issuer verification mismatch",
-    explanation: "All automated rules pass, but the simulated accreditation registry holds a validity date of 09/01/2028 for the certificate while the submitted document states 09/01/2031. The mismatch is routed to the verification officer.",
+    explanation: "All automated rules pass, but the simulated accreditation registry holds a validity date of 09/01/2028 for the certificate while the submitted document states 09/01/2031. The mismatch is routed to the scrutiny & verification officer for human review.",
     submittedAt: "2026-10-16T09:05:00Z",
     programmes: northfield.programmes.map((p) => ({ name: p.name, level: p.level, intake: p.approvedIntake })),
     documents: [prevApproval(northfield, "DRA/EOA/2026/1055", "Bachelor of Architecture", 40), affidavit(northfield, "NSA/AFF/2027/002"), fireNoc(northfield, "SFBA/NOC/2025/4120", "20/05/2025", "19/05/2028"), accreditation(northfield, "DNAR/ACC/2025/0455", "Bachelor of Architecture", "10/01/2025", "09/01/2031"), faculty(northfield, 18), infra(northfield, "5,100"), fee(northfield, "DPL/TXN/2026/55055")],

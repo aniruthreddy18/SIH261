@@ -49,7 +49,7 @@ export function FindingActions({ finding, actor }: { finding: { id: string; stat
             icon={<ArrowUpRight />}
             size="xs"
             title="Escalate finding"
-            fields={[{ name: "escalateTo", label: "Escalate to", type: "select", options: (["SCRUTINY_OFFICER", "VERIFICATION_OFFICER", "SENIOR_OFFICIAL"] as const).map((r) => ({ value: r, label: ROLE_LABELS[r] })) }, ...reason("Reason for escalation")]}
+            fields={[{ name: "escalateTo", label: "Escalate to", type: "select", options: (["SCRUTINY_OFFICER", "SENIOR_OFFICIAL"] as const).map((r) => ({ value: r, label: ROLE_LABELS[r] })) }, ...reason("Reason for escalation")]}
             action={reviewFindingAction.bind(null, finding.id, "ESCALATE")}
           />
         </>

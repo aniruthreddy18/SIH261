@@ -158,7 +158,7 @@ async function main() {
     actors.set(`applicant:${i.slug}`, toActor(u));
   }
   const scrutiny = actors.get("SCRUTINY_OFFICER")!;
-  const verifier = actors.get("VERIFICATION_OFFICER")!;
+  const verifier = scrutiny;
 
   for (const spec of APPLICATIONS) {
     const i = INSTITUTIONS.find((x) => x.slug === spec.slug)!;

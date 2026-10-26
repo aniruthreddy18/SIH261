@@ -154,7 +154,7 @@ async function persistVerification(
       documentId: t.documentId,
       verificationId: v.id,
       evidenceKey: `${t.version.id}|${res.status}|${JSON.stringify(mismatched)}`,
-      assignedRole: "VERIFICATION_OFFICER",
+      assignedRole: "SCRUTINY_OFFICER",
     });
   }
   return v;
@@ -204,7 +204,7 @@ export async function runVerification(actor: Actor, applicationId: string, docum
   const problems = results.filter((r) => r.status !== "VERIFIED");
   if (problems.length) {
     const unavailable = problems.filter((p) => p.status === "SOURCE_UNAVAILABLE").length;
-    await notifyRoles(["VERIFICATION_OFFICER"], {
+    await notifyRoles(["SCRUTINY_OFFICER"], {
       type: unavailable ? "SOURCE_UNAVAILABLE" : "VERIFICATION_ISSUES",
       title: unavailable ? `Issuer source unavailable for ${app.reference}` : `${problems.length} verification issue(s) on ${app.reference}`,
       body: `${app.institutionName}: ${problems.map((p) => VERIFICATION_STATUS_LABELS[p.status]).join(", ")}`,
@@ -253,7 +253,7 @@ export async function recordManualVerification(actor: Actor, documentId: string,
         documentId,
         verificationId: v.id,
         evidenceKey: `${version.id}|MANUAL_MISMATCH|${ref}`,
-        assignedRole: "VERIFICATION_OFFICER",
+        assignedRole: "SCRUTINY_OFFICER",
       });
     }
     await tx.reviewAction.create({ data: { applicationId: doc.applicationId, findingId: finding?.id ?? null, actorId: actor.userId, actorName: actor.name, actorRole: actor.role, action: "MANUAL_VERIFICATION", outcome, reason: r, reference: ref } });

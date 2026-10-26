@@ -90,8 +90,8 @@ test("full journey: findings → rectification → revalidation → verification
   await expect(page.getByText("improved").first()).toBeVisible();
   await expect(page.getByText("Automated checks passed").first()).toBeVisible();
 
-  // 3. Verification officer verifies the new NOC against the (simulated) issuer.
-  await signIn(page, "verification@aegis.demo");
+  // 3. The scrutiny & verification officer verifies the new NOC against the (simulated) issuer.
+  await signIn(page, "scrutiny@aegis.demo");
   await page.goto(`/applications/${id}?tab=verification`);
   await page.getByRole("button", { name: "Run issuer verification" }).click();
   await expectToast(page, "Verification attempted");

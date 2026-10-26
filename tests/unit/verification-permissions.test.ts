@@ -97,6 +97,13 @@ describe("permissions", () => {
     expect(hasPermission("ADMIN", "users.manage")).toBe(true);
     expect(hasPermission("ADMIN", "application.decide")).toBe(false);
   });
+  it("gives one officer role both scrutiny and verification duties, but not the final decision", () => {
+    for (const p of ["validation.run", "verification.run", "verification.manual", "finding.review", "application.forward"] as const) {
+      expect(hasPermission("SCRUTINY_OFFICER", p)).toBe(true);
+    }
+    expect(hasPermission("SCRUTINY_OFFICER", "application.decide")).toBe(false);
+    expect(hasPermission("APPLICANT", "verification.manual")).toBe(false);
+  });
 });
 
 describe("anomaly detection", () => {

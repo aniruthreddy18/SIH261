@@ -4,7 +4,6 @@
 export const ROLES = [
   "APPLICANT",
   "SCRUTINY_OFFICER",
-  "VERIFICATION_OFFICER",
   "SENIOR_OFFICIAL",
   "ADMIN",
 ] as const;
@@ -12,8 +11,7 @@ export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABELS: Record<Role, string> = {
   APPLICANT: "Institution Applicant",
-  SCRUTINY_OFFICER: "Scrutiny / Validation Officer",
-  VERIFICATION_OFFICER: "Verification / Compliance Officer",
+  SCRUTINY_OFFICER: "Scrutiny & Verification Officer",
   SENIOR_OFFICIAL: "Senior Official / Competent Authority",
   ADMIN: "System / Rules Administrator",
 };

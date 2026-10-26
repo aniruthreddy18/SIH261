@@ -223,7 +223,7 @@ export async function runValidation(actor: Actor, applicationId: string, trigger
           recommendedAction: a.recommendedAction,
           documentId: a.documentId,
           evidenceKey: JSON.stringify(a.evidence.map((e) => [e.versionId, e.value])),
-          assignedRole: "VERIFICATION_OFFICER",
+          assignedRole: "SCRUTINY_OFFICER",
         }, { runId: run.id, reopenRectification: trigger === "RECTIFICATION" });
         if (r.outcome === "CREATED") {
           newFindings++;

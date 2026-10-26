@@ -171,7 +171,7 @@ describe("application lifecycle on a new application", () => {
 describe("issuer verification", () => {
   it("verifies documents through the simulated source and labels the source type", async () => {
     const sunrise = await appByName("Sunrise");
-    const res = await runVerification(A("verification@aegis.demo"), sunrise.id);
+    const res = await runVerification(A("scrutiny@aegis.demo"), sunrise.id);
     expect(res.length).toBe(4);
     expect(res.every((r) => r.status === "VERIFIED")).toBe(true);
     const v = await prisma.issuerVerification.findFirstOrThrow({ where: { applicationId: sunrise.id }, orderBy: { requestedAt: "desc" } });
@@ -182,7 +182,7 @@ describe("issuer verification", () => {
     const northfield = await appByName("Northfield");
     await updateSettings(A("admin@aegis.demo"), { syntheticIssuerOutage: "true", issuerMaxRetries: "1" });
     try {
-      const res = await runVerification(A("verification@aegis.demo"), northfield.id);
+      const res = await runVerification(A("scrutiny@aegis.demo"), northfield.id);
       expect(res.some((r) => r.status === "SOURCE_UNAVAILABLE")).toBe(true);
       const v = await prisma.issuerVerification.findFirstOrThrow({ where: { applicationId: northfield.id, status: "SOURCE_UNAVAILABLE" }, orderBy: { requestedAt: "desc" } });
       expect(v.attempts).toBe(2);
@@ -196,7 +196,7 @@ describe("issuer verification", () => {
     await prisma.issuerSource.update({ where: { id: "synthetic-demo-issuer" }, data: { enabled: false } });
     try {
       const sunrise = await appByName("Sunrise");
-      const res = await runVerification(A("verification@aegis.demo"), sunrise.id);
+      const res = await runVerification(A("scrutiny@aegis.demo"), sunrise.id);
       expect(res.filter((r) => r.status === "NOT_SUPPORTED").length).toBe(3);
     } finally {
       await prisma.issuerSource.update({ where: { id: "synthetic-demo-issuer" }, data: { enabled: true } });
@@ -205,8 +205,8 @@ describe("issuer verification", () => {
   it("accepts a manual confirmation only with a reason and reference", async () => {
     const riverside = await appByName("Riverside");
     const fee = await prisma.document.findFirstOrThrow({ where: { applicationId: riverside.id, categoryCode: "FEE_RECEIPT" } });
-    await expect(recordManualVerification(A("verification@aegis.demo"), fee.id, "VERIFIED", "ok", "")).rejects.toBeInstanceOf(DomainError);
-    await recordManualVerification(A("verification@aegis.demo"), fee.id, "VERIFIED", "Confirmed with ledger operations desk by email", "MAIL/2026/77");
+    await expect(recordManualVerification(A("scrutiny@aegis.demo"), fee.id, "VERIFIED", "ok", "")).rejects.toBeInstanceOf(DomainError);
+    await recordManualVerification(A("scrutiny@aegis.demo"), fee.id, "VERIFIED", "Confirmed with ledger operations desk by email", "MAIL/2026/77");
     const f = await prisma.finding.findFirstOrThrow({ where: { applicationId: riverside.id, fingerprint: `VERIFY|${fee.id}` } });
     expect(f.status).toBe("RESOLVED");
     const v = await prisma.issuerVerification.findFirstOrThrow({ where: { documentId: fee.id, isManual: true } });
@@ -252,7 +252,7 @@ describe("review, rectification and revalidation", () => {
 
     // Forwarding requires verification of the new version, then a senior official records the outcome.
     await expect(forwardForAuthorizedReview(A("scrutiny@aegis.demo"), meridian.id, "Forwarding after rectification")).rejects.toThrow(/verification is incomplete/);
-    await runVerification(A("verification@aegis.demo"), meridian.id);
+    await runVerification(A("scrutiny@aegis.demo"), meridian.id);
     await forwardForAuthorizedReview(A("scrutiny@aegis.demo"), meridian.id, "Forwarding after rectification");
     await recordDecision(A("senior@aegis.demo"), meridian.id, "SATISFACTORY_FOR_FURTHER_PROCESSING", "Documentary scrutiny satisfactory.", "AEG/SO/2026/9");
     const closed = await prisma.application.findUniqueOrThrow({ where: { id: meridian.id } });

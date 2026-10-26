@@ -28,7 +28,7 @@ export default async function ReviewQueuePage({ searchParams }: { searchParams: 
       <Card>
         <form className="flex flex-wrap items-end gap-2 border-b border-border p-3">
           <Select name="severity" defaultValue={sp.severity ?? ""} className="w-40" aria-label="Severity"><option value="">All severities</option>{SEVERITIES.map((s) => <option key={s} value={s}>{s.toLowerCase()}</option>)}</Select>
-          <Select name="role" defaultValue={sp.role ?? ""} className="w-64" aria-label="Assigned role"><option value="">Any assigned role</option>{(["SCRUTINY_OFFICER", "VERIFICATION_OFFICER", "SENIOR_OFFICIAL"] as Role[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}</Select>
+          <Select name="role" defaultValue={sp.role ?? ""} className="w-64" aria-label="Assigned role"><option value="">Any assigned role</option>{(["SCRUTINY_OFFICER", "SENIOR_OFFICIAL"] as Role[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}</Select>
           <Select name="source" defaultValue={sp.source ?? ""} className="w-48" aria-label="Source"><option value="">All sources</option><option value="RULE">Deterministic rules</option><option value="ANOMALY">Anomaly indicators</option><option value="VERIFICATION">Issuer verification</option></Select>
           <Select name="type" defaultValue={sp.type ?? ""} className="w-64" aria-label="Finding type"><option value="">All finding types</option>{Object.entries(FINDING_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
           <Button type="submit" variant="secondary" size="sm">Apply</Button>

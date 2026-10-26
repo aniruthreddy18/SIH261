@@ -80,11 +80,12 @@ Password for every account: **`Aegis@Demo2026`** (stored as scrypt hashes; the s
 
 | Role | Email | Use it to… |
 |---|---|---|
-| Scrutiny / Validation Officer | `scrutiny@aegis.demo` | run validation, review findings, request rectification, forward |
-| Verification / Compliance Officer | `verification@aegis.demo` | run issuer verification, record manual confirmation, review anomalies |
+| Scrutiny & Verification Officer | `scrutiny@aegis.demo` | run validation and issuer verification, record manual confirmation, review all findings (rules, anomalies, verification), request rectification, forward |
 | Senior Official / Competent Authority | `senior@aegis.demo` | record the authorised review outcome |
 | System / Rules Administrator | `admin@aegis.demo` | users, versioned rules, issuer sources, settings |
 | Institution Applicant | `applicant.<slug>@aegis.demo` | upload / replace documents, view results, submit rectification |
+
+One officer role handles both scrutiny and issuer verification: the system checks every document automatically, and the officer only reviews the exceptions it cannot decide. Separation of duties is kept between the institution (submits), the officer (checks and forwards), the senior official (decides) and the administrator (configures).
 
 Applicant slugs: `sunrise`, `lakeview`, `meridian`, `coastal`, `northfield`, `riverside`, `highland`, `greenfield`, `valley`. Each applicant can only see their own institution's records.
 

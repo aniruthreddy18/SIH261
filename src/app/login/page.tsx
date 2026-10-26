@@ -7,8 +7,7 @@ import { DECISION_SUPPORT_DISCLAIMER, ROLE_LABELS, type Role } from "@/lib/domai
 export const metadata = { title: "Sign in" };
 
 const DEMO_ACCOUNTS: { email: string; role: Role; note: string }[] = [
-  { email: "scrutiny@aegis.demo", role: "SCRUTINY_OFFICER", note: "Runs validation, reviews findings, requests rectification, forwards." },
-  { email: "verification@aegis.demo", role: "VERIFICATION_OFFICER", note: "Issuer verification, manual confirmation, anomalies." },
+  { email: "scrutiny@aegis.demo", role: "SCRUTINY_OFFICER", note: "Validation, issuer verification, manual confirmation, findings, rectification, forwarding." },
   { email: "senior@aegis.demo", role: "SENIOR_OFFICIAL", note: "Records the authorised review outcome." },
   { email: "admin@aegis.demo", role: "ADMIN", note: "Users, versioned rules, issuer sources, settings." },
   { email: "applicant.meridian@aegis.demo", role: "APPLICANT", note: "Meridian Institute of Management — expired NOC (rectification demo)." },
