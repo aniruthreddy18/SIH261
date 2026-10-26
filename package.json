@@ -2,7 +2,7 @@
   "name": "aegis-sih-26261",
   "version": "0.1.0",
   "private": true,
-  "description": "Aegis — Application Validation & Compliance Intelligence (SIH 2026 PS 26261 prototype)",
+  "description": "Aegis \u2014 Application Validation & Compliance Intelligence (SIH 2026 PS 26261 prototype)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx scripts/seed.ts",
-    "db:reset": "prisma migrate reset --force --skip-seed && tsx scripts/seed.ts",
+    "db:reset": "tsx scripts/reset-db.ts",
     "samples": "tsx scripts/generate-samples.ts",
     "setup": "prisma migrate deploy && tsx scripts/seed.ts",
     "test": "vitest run",

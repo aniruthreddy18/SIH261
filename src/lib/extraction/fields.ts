@@ -254,10 +254,15 @@ function findHeuristic(def: FieldDefinition, pages: PageText[], meta: Record<str
     if (meta.IsSignaturesPresent === true) {
       return { value: "PDF signature field present (not cryptographically validated)", normalized: "pdf_signature_field", confidence: 0.7, page: null, excerpt: "PDF document structure reports a signature field.", bbox: null, method: "PDF_STRUCTURE" };
     }
-    for (const page of pages) {
-      for (const line of page.lines) {
-        if (/digitally signed by|\bsignature\b|\bsigned\b|\bseal\b|\bstamp\b/i.test(line.text)) {
-          return { value: `Text cue present: "${normalizeWhitespace(line.text).slice(0, 80)}"`, normalized: "text_cue", confidence: round(0.5 * (page.method === "OCR" ? line.confidence : 1)), page: page.page, excerpt: line.text.slice(0, 300), bbox: line.bbox, method: lineMethod(page, false) };
+    // Explicit statements ("Digitally signed by: …") are strong text cues; generic words such as
+    // "seal" or "stamp" are weak. Neither validates a signature.
+    const cues: [RegExp, number][] = [[/digitally signed by|\bsigned by\b|signature of/i, 0.9], [/\bsignature\b|\bsigned\b|\bseal\b|\bstamp\b/i, 0.5]];
+    for (const [re, base] of cues) {
+      for (const page of pages) {
+        for (const line of page.lines) {
+          if (re.test(line.text)) {
+            return { value: `Text cue present: "${normalizeWhitespace(line.text).slice(0, 80)}"`, normalized: "text_cue", confidence: round(base * (page.method === "OCR" ? line.confidence : 1)), page: page.page, excerpt: line.text.slice(0, 300), bbox: line.bbox, method: lineMethod(page, false) };
+          }
         }
       }
     }

@@ -77,6 +77,12 @@ class TesseractEngine implements OcrEngine {
     return this.worker;
   }
 
+  async shutdown(): Promise<void> {
+    const w = this.worker;
+    this.worker = null;
+    if (w) await (await w).terminate();
+  }
+
   async recognize(image: Buffer): Promise<OcrResult> {
     const st = this.status();
     if (!st.available) throw new OcrUnavailableError(st.reason!);
@@ -117,4 +123,10 @@ const g = globalThis as unknown as { __aegisOcr?: OcrEngine };
 export function getOcrEngine(): OcrEngine {
   if (!g.__aegisOcr) g.__aegisOcr = new TesseractEngine();
   return g.__aegisOcr;
+}
+
+/** Terminate the OCR worker thread (for scripts and tests that must exit cleanly). */
+export async function shutdownOcr(): Promise<void> {
+  const e = g.__aegisOcr as (OcrEngine & { shutdown?: () => Promise<void> }) | undefined;
+  await e?.shutdown?.();
 }
