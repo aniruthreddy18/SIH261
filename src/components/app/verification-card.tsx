@@ -56,7 +56,7 @@ export function VerificationCard({ v, title }: { v: VerificationView; title?: st
             </tbody>
           </table>
         )}
-        {v.manualReason && <p className="text-ink-2"><span className="font-medium">Officer's reason: </span>{v.manualReason}</p>}
+        {v.manualReason && <p className="text-ink-2"><span className="font-medium">Officer&rsquo;s reason: </span>{v.manualReason}</p>}
         {(v.limitation || v.errorMessage) && <p className="text-muted"><span className="font-medium text-ink-2">{v.errorMessage ? "Error: " : "Limitation: "}</span>{v.errorMessage ?? v.limitation}</p>}
         {v.returnedJson && (
           <details>

@@ -28,7 +28,7 @@ export default async function CompliancePage({ searchParams }: { searchParams: P
           <Card className="mb-4">
             <form className="flex flex-wrap items-end gap-2 p-3">
               <p className="mr-2 text-sm font-semibold text-ink">Application</p>
-              <Select name="app" defaultValue={selected} className="w-96" aria-label="Application">
+              <Select name="app" defaultValue={selected} className="w-full sm:w-96" aria-label="Application">
                 {apps.map((a) => <option key={a.id} value={a.id}>{a.reference} — {a.institutionName}</option>)}
               </Select>
               <Button type="submit" variant="secondary" size="sm">Show</Button>

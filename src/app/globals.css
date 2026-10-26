@@ -40,6 +40,8 @@
   :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
   ::selection { background: #dbe6ff; }
   table { border-collapse: collapse; }
+  /* Let grid items shrink below their content width (prevents horizontal overflow on phones). */
+  .grid > * { min-width: 0; }
 }
 
 @layer components {

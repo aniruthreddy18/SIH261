@@ -61,7 +61,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
       </Card>
       <Card>
         <form className="flex flex-wrap items-end gap-2 border-b border-border p-3">
-          <Select name="applicationId" defaultValue={sp.applicationId ?? ""} className="w-72" aria-label="Application"><option value="">All applications</option>{apps.map((a) => <option key={a.id} value={a.id}>{a.reference} — {a.institutionName}</option>)}</Select>
+          <Select name="applicationId" defaultValue={sp.applicationId ?? ""} className="w-full sm:w-72" aria-label="Application"><option value="">All applications</option>{apps.map((a) => <option key={a.id} value={a.id}>{a.reference} — {a.institutionName}</option>)}</Select>
           <Select name="eventType" defaultValue={sp.eventType ?? ""} className="w-64" aria-label="Event type"><option value="">All event types</option>{AUDIT_EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</Select>
           <Input name="actor" defaultValue={sp.actor} placeholder="User or service" className="w-44" aria-label="Actor" />
           <Input name="from" type="date" defaultValue={sp.from} className="w-40" aria-label="From date" />
