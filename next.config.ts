@@ -9,6 +9,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Separate build dir lets the E2E server run alongside a dev server.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Native / worker-based packages must not be bundled by webpack.
   serverExternalPackages: ["tesseract.js", "@napi-rs/canvas", "pdfkit", "unpdf", "@prisma/client"],
   experimental: {

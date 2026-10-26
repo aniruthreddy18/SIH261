@@ -4,7 +4,6 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { createRequire } from "node:module";
 import type { BBox, TextLine } from "./types";
 
 export interface OcrResult {
@@ -32,14 +31,8 @@ const OCR_TIMEOUT_MS = 90_000;
 
 function resolveLangPath(): string | null {
   if (process.env.OCR_LANG_PATH) return process.env.OCR_LANG_PATH;
-  try {
-    const require = createRequire(path.join(process.cwd(), "package.json"));
-    const pkg = require.resolve("@tesseract.js-data/eng/package.json");
-    const dir = path.join(path.dirname(pkg), "4.0.0_best_int");
-    return fs.existsSync(path.join(dir, "eng.traineddata.gz")) ? dir : null;
-  } catch {
-    return null;
-  }
+  const dir = path.join(process.cwd(), "node_modules", "@tesseract.js-data", "eng", "4.0.0_best_int");
+  return fs.existsSync(path.join(dir, "eng.traineddata.gz")) ? dir : null;
 }
 
 type TesseractWorker = {

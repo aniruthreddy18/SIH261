@@ -55,7 +55,8 @@ export function renderPdf(spec: DocSpec): Promise<Buffer> {
     if (spec.signedBy) {
       doc.moveDown(2.5).fontSize(10.5).fillColor("#111827").text(`Digitally signed by: ${spec.signedBy}`);
     }
-    doc.fontSize(7.5).fillColor("#94a3b8").text(DISCLAIMER, 64, 790, { align: "center", width: 467 });
+    doc.page.margins.bottom = 0; // footer sits below the content area; don't trigger a page break
+    doc.fontSize(7.5).fillColor("#94a3b8").text(DISCLAIMER, 64, 790, { align: "center", width: 467, lineBreak: false });
     doc.end();
   });
 }

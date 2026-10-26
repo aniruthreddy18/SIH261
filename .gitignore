@@ -17,3 +17,6 @@ test-results/
 playwright-report/
 .DS_Store
 storage-test/
+storage-e2e/
+prisma/e2e.db*
+.next-e2e/

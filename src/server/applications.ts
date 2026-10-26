@@ -112,7 +112,7 @@ export async function createApplication(actor: Actor, input: CreateApplicationIn
 
 /** Load an application the actor is allowed to see, or throw NotFoundError. */
 export async function getAccessibleApplication(actor: Actor, applicationId: string) {
-  const app = await prisma.application.findUnique({ where: { id: applicationId }, include: { template: true, institution: true, programmes: true } });
+  const app = await prisma.application.findUnique({ where: { id: applicationId }, include: { template: true, institution: { include: { programmes: true } }, programmes: true } });
   if (!app) throw new NotFoundError();
   assertInstitutionAccess(actor, app.institutionId);
   return app;
