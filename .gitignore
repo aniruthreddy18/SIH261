@@ -1,0 +1,19 @@
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# local data — never commit uploaded documents or databases
+storage/
+prisma/*.db
+prisma/*.db-journal
+prisma/test-*.db*
+.env
+.env.local
+
+test-results/
+playwright-report/
+.DS_Store
+storage-test/
