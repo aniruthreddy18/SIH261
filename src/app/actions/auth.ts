@@ -1,27 +1,31 @@
 "use server";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { login, logout, SESSION_COOKIE } from "@/server/auth";
-import { clearSessionCookie, setSessionCookie } from "@/server/session";
+import { login, logout, SESSION_COOKIE, type LoginPortal } from "@/server/auth";
+import { clearSessionCookie, getActor, setSessionCookie } from "@/server/session";
+
+const safePath = (p: string, fallback: string) => (p.startsWith("/") && !p.startsWith("//") ? p : fallback);
 
 export async function loginAction(_prev: { error?: string } | undefined, form: FormData): Promise<{ error?: string }> {
   const email = String(form.get("email") ?? "");
   const password = String(form.get("password") ?? "");
-  const next = String(form.get("next") ?? "/");
+  const portal: LoginPortal = form.get("portal") === "INSTITUTION" ? "INSTITUTION" : "OFFICIAL";
+  const next = String(form.get("next") ?? "");
   if (!email || !password) return { error: "Enter your email and password." };
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "local";
-  const result = await login(email, password, { ip, userAgent: h.get("user-agent") ?? undefined });
+  const result = await login(email, password, { ip, userAgent: h.get("user-agent") ?? undefined, portal });
   if (!result.ok) return { error: result.error };
   await setSessionCookie(result.token, result.expiresAt);
-  // Only allow same-site relative redirects.
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
+  // Institutions land in their portal; officials in the Command Centre. Only same-site paths.
+  if (portal === "INSTITUTION") redirect(next.startsWith("/portal") ? safePath(next, "/portal") : "/portal");
+  redirect(next && !next.startsWith("/portal") ? safePath(next, "/") : "/");
 }
 
 export async function logoutAction() {
+  const actor = await getActor();
   const jar = await cookies();
   await logout(jar.get(SESSION_COOKIE)?.value);
   await clearSessionCookie();
-  redirect("/login");
+  redirect(actor?.role === "APPLICANT" ? "/institution/login" : "/login");
 }

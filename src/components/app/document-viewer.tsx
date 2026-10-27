@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { correctFieldAction } from "@/app/actions/workflow";
 import { ActionDialog } from "@/components/action-dialog";
@@ -27,6 +27,11 @@ export function DocumentViewer({ versionId, pageCount, fields, initialPage, canC
   const [page, setPage] = useState(Math.min(Math.max(1, initialPage), pageCount));
   const [active, setActive] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const img = useRef<HTMLImageElement>(null);
+  // A cached image can finish loading before React attaches onLoad; check it directly.
+  useEffect(() => {
+    if (img.current?.complete && img.current.naturalWidth > 0) setLoaded(true);
+  }, [page]);
   const onPage = fields.filter((f) => f.page === page && f.bbox);
   const select = (f: ViewerField) => {
     setActive(f.id);
@@ -49,7 +54,7 @@ export function DocumentViewer({ versionId, pageCount, fields, initialPage, canC
         <div className="bg-subtle p-3">
           <div className="relative mx-auto w-full max-w-[640px] overflow-hidden border border-border bg-white shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/api/documents/versions/${versionId}/preview?page=${page}`} alt={`Page ${page} of the document`} className="block w-full" onLoad={() => setLoaded(true)} />
+            <img ref={img} src={`/api/documents/versions/${versionId}/preview?page=${page}`} alt={`Page ${page} of the document`} className="block w-full" onLoad={() => setLoaded(true)} />
             {loaded && onPage.map((f) => (
               <span
                 key={f.id}

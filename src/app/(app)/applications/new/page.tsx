@@ -2,7 +2,7 @@ import { pageGuard } from "@/server/session";
 import { listFormOptions } from "@/server/applications";
 import { PageHeader } from "@/components/page-header";
 import { AccessDenied } from "@/components/access-denied";
-import { NewApplicationForm } from "./form";
+import { NewApplicationForm } from "@/components/app/new-application-form";
 
 export const metadata = { title: "Create application" };
 

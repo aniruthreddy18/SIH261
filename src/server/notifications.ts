@@ -1,6 +1,7 @@
 // Database-backed in-app notifications. No e-mail is sent; the UI never claims otherwise.
 import type { Role, Severity } from "@/lib/domain";
 import { prisma, type Tx } from "./db";
+import { institutionLink } from "@/lib/portal-paths";
 
 export interface NotificationInput {
   type: string;
@@ -31,7 +32,8 @@ export async function notifyRoles(roles: Role[], n: NotificationInput, tx: Tx = 
 
 export async function notifyInstitution(institutionId: string, n: NotificationInput, tx: Tx = prisma) {
   const users = await tx.user.findMany({ where: { institutionId, role: "APPLICANT", active: true }, select: { id: true } });
-  return notifyUsers(users.map((u) => u.id), n, tx);
+  // Institution users work in the Institution Portal, so their links point there.
+  return notifyUsers(users.map((u) => u.id), { ...n, link: institutionLink(n.link) }, tx);
 }
 
 export async function listNotifications(userId: string, limit = 20) {

@@ -70,8 +70,8 @@ export function FindingCard({ f, actor, showLink = true }: { f: FindingView; act
           <p className="text-[13.5px] font-semibold text-ink">{f.title}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <SeverityBadge severity={f.severity} />
-            <OutcomeClassBadge outcomeClass={f.outcomeClass} deterministic={f.isDeterministic} />
-            <Badge tone="outline">{SOURCE_LABEL[f.source] ?? f.source}</Badge>
+            {!isApplicant && <OutcomeClassBadge outcomeClass={f.outcomeClass} deterministic={f.isDeterministic} />}
+            {!isApplicant && <Badge tone="outline">{SOURCE_LABEL[f.source] ?? f.source}</Badge>}
             <Badge tone="neutral">{findingTypeLabel(f.type)}</Badge>
             <FindingStatusBadge status={f.status} />
             {f.confidence !== null && <span className="text-[11px] text-muted">confidence {Math.round(f.confidence * 100)}%</span>}

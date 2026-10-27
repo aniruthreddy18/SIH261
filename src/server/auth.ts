@@ -14,9 +14,12 @@ const ttlHours = () => Number(process.env.SESSION_TTL_HOURS ?? 12);
 
 const hashToken = (t: string) => crypto.createHash("sha256").update(t).digest("hex");
 
+/** Which sign-in page was used. Institutions and AICTE staff sign in through separate portals. */
+export type LoginPortal = "INSTITUTION" | "OFFICIAL";
+
 export type LoginResult = { ok: true; token: string; expiresAt: Date; actor: Actor } | { ok: false; error: string };
 
-export async function login(email: string, password: string, meta: { ip: string; userAgent?: string }): Promise<LoginResult> {
+export async function login(email: string, password: string, meta: { ip: string; userAgent?: string; portal?: LoginPortal }): Promise<LoginResult> {
   const normalized = email.trim().toLowerCase();
   const limiter = rateLimit(`login:${meta.ip}:${normalized}`, 5, 15 * 60_000);
   if (!limiter.allowed) return { ok: false, error: `Too many sign-in attempts. Try again in ${Math.ceil(limiter.retryAfterSec / 60)} minute(s).` };
@@ -26,6 +29,19 @@ export async function login(email: string, password: string, meta: { ip: string;
   if (!user || !valid || !user.active) {
     await recordAudit({ actor: { label: `anonymous (${normalized.slice(0, 80)})` }, eventType: "AUTH_LOGIN_FAILED", action: "Failed sign-in attempt", reason: !user ? "Unknown account" : !user.active ? "Account disabled" : "Invalid password" });
     return { ok: false, error: "Invalid email or password." };
+  }
+  // Enforce the portal on the server: an institution account cannot use the AICTE sign-in and
+  // vice versa. Checked only after the password is verified, so it reveals nothing to guessers.
+  if (meta.portal) {
+    const isInstitution = user.role === "APPLICANT";
+    if (meta.portal === "INSTITUTION" && !isInstitution) {
+      await recordAudit({ actor: toActor(user), eventType: "AUTH_LOGIN_FAILED", action: "Sign-in rejected: AICTE staff account used on the institution portal", reason: "Wrong sign-in portal" });
+      return { ok: false, error: "This is an AICTE staff account. Please use the AICTE official sign-in." };
+    }
+    if (meta.portal === "OFFICIAL" && isInstitution) {
+      await recordAudit({ actor: toActor(user), eventType: "AUTH_LOGIN_FAILED", action: "Sign-in rejected: institution account used on the AICTE official sign-in", reason: "Wrong sign-in portal" });
+      return { ok: false, error: "This is an institution account. Please use the Institution login." };
+    }
   }
   resetRateLimit(`login:${meta.ip}:${normalized}`);
   const token = crypto.randomBytes(32).toString("base64url");

@@ -89,7 +89,16 @@ Other commands:
 
 ## Demo accounts
 
-Password for every account: **`Aegis@Demo2026`** (stored as scrypt hashes; the sign-in page lists accounts when `DEMO_MODE=true`).
+There are **two separate sign-in pages**, and the server only accepts each account on its own page:
+
+| Who | Sign in at | Lands in |
+|---|---|---|
+| Institutions | **http://localhost:3000/institution/login** (green) | the **Institution Portal** (`/portal`) |
+| AICTE officials and administrators | **http://localhost:3000/login** (navy) | the official workspace (Command Centre) |
+
+A switch at the top of each page links to the other. An institution account used on the official page (or a staff account on the institution page) is refused with a message pointing to the right page, and the attempt is audited.
+
+Password for every account: **`Aegis@Demo2026`** (stored as scrypt hashes; each sign-in page lists its demo accounts when `DEMO_MODE=true`).
 
 | Role | Email | Use it to… |
 |---|---|---|
@@ -101,6 +110,21 @@ Password for every account: **`Aegis@Demo2026`** (stored as scrypt hashes; the s
 One officer role handles both scrutiny and issuer verification: the system checks every document automatically, and the officer only reviews the exceptions it cannot decide. Separation of duties is kept between the institution (submits), the officer (checks and forwards), the senior official (decides) and the administrator (configures).
 
 Applicant slugs: `sunrise`, `lakeview`, `meridian`, `coastal`, `northfield`, `riverside`, `highland`, `greenfield`, `valley`. Each applicant can only see their own institution's records.
+
+### Institution Portal
+
+Institution users get their own simpler area (green, top navigation, no official sidebar):
+
+| Page | What it does |
+|---|---|
+| **Home** (`/portal`) | Welcome banner, counts, **Action required** (correction requests with due dates, information requests, drafts, failed checks), application cards with a five-step tracker (Submitted → Documents → Automatic checks → AICTE review → Outcome) |
+| **My applications** | Every application as a card with its status and next step |
+| **New application** | Details pre-filled from the institutional record; then goes straight to document upload |
+| **Application page** | Plain-language status and next step. **Overview**: recorded outcome (if any), correction request with "Upload replacement" and **Submit corrections and revalidate**, issues to fix with "What you need to do", verification status (labelled simulated). **Documents**: checklist with upload / replace / withdraw. **Check results**: failed and passed checks with "What changed since" the previous check. **History**: status timeline, correction requests and AICTE actions (internal notes hidden) |
+| **Document page** | What the system read from the document, highlighted on the page; replace or download |
+| **Help** | How the process works, what each status means, required documents per application type, FAQ |
+
+Institution users who open an official-area link (for example from an old notification) are sent to the matching portal page; officials cannot open the portal.
 
 ## Demo scenarios
 

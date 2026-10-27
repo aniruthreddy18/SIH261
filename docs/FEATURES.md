@@ -7,6 +7,7 @@
 | Authentication (scrypt, hashed session tokens, rate limiting) | ✅ | Integration and E2E tested |
 | Server-side RBAC for 4 roles (applicant, scrutiny & verification officer, senior official, administrator), institution isolation | ✅ | Pages, actions, routes, exports; unit, integration and E2E tests |
 | Command Centre with DB-derived metrics | ✅ | No hard-coded numbers |
+| Separate Institution login and Institution Portal (home, applications, application page, document view, help) | ✅ | Server refuses accounts on the wrong sign-in page; E2E tested |
 | Application creation (server reference), templates, programmes | ✅ | Two configurable demo templates |
 | Explicit status state machine | ✅ | Invalid transitions rejected |
 | Secure upload (type, size, magic bytes), private storage, versioning, withdrawal | ✅ | Replacements retain history |

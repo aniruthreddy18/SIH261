@@ -56,6 +56,24 @@ describe("authentication", () => {
     const stored = await prisma.user.findUniqueOrThrow({ where: { email: "scrutiny@aegis.demo" } });
     expect(stored.passwordHash.startsWith("scrypt$")).toBe(true);
   });
+  it("keeps institutions and AICTE staff on separate sign-in portals", async () => {
+    const staffOnInstitution = await login("admin@aegis.demo", "Aegis@Demo2026", { ip: "p1", portal: "INSTITUTION" });
+    expect(staffOnInstitution.ok).toBe(false);
+    if (!staffOnInstitution.ok) expect(staffOnInstitution.error).toContain("AICTE official sign-in");
+    const institutionOnOfficial = await login("applicant.valley@aegis.demo", "Aegis@Demo2026", { ip: "p1", portal: "OFFICIAL" });
+    expect(institutionOnOfficial.ok).toBe(false);
+    if (!institutionOnOfficial.ok) expect(institutionOnOfficial.error).toContain("Institution login");
+    expect((await login("applicant.valley@aegis.demo", "Aegis@Demo2026", { ip: "p1", portal: "INSTITUTION" })).ok).toBe(true);
+    expect((await login("admin@aegis.demo", "Aegis@Demo2026", { ip: "p1", portal: "OFFICIAL" })).ok).toBe(true);
+    // A wrong password on the wrong portal still gives the generic error (portal is checked only after the password).
+    const guess = await login("admin@aegis.demo", "wrong", { ip: "p2", portal: "INSTITUTION" });
+    if (!guess.ok) expect(guess.error).toBe("Invalid email or password.");
+    expect(await prisma.auditEvent.count({ where: { reason: "Wrong sign-in portal" } })).toBe(2);
+  });
+  it("sends institution notifications to portal links", async () => {
+    const n = await prisma.notification.findFirstOrThrow({ where: { user: { role: "APPLICANT" }, link: { not: null } } });
+    expect(n.link!.startsWith("/portal/")).toBe(true);
+  });
   it("rate-limits repeated failures", async () => {
     let last;
     for (let i = 0; i < 7; i++) last = await login("senior@aegis.demo", "wrong", { ip: "rl" });

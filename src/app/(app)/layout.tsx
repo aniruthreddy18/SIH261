@@ -1,4 +1,7 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { Search } from "lucide-react";
+import { portalPathFor } from "@/lib/portal-paths";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ACTIVE_FINDING_STATUSES, ROLE_LABELS } from "@/lib/domain";
 import { prisma } from "@/server/db";
@@ -12,6 +15,8 @@ import { UserMenu } from "@/components/shell/user-menu";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const actor = await requireActor();
+  // Institutions use their own portal; send them to the matching page there.
+  if (actor.role === "APPLICANT") redirect(portalPathFor((await headers()).get("x-pathname") ?? "/"));
   const items = NAV.filter((i) => !i.permission || hasPermission(actor.role, i.permission)).map((i) =>
     i.href === "/" ? { ...i, label: actor.role === "APPLICANT" ? "My Dashboard" : actor.role === "ADMIN" ? "Admin Dashboard" : "Command Centre" } : i,
   );

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ActionButton } from "@/components/action-dialog";
 import { FindingStatusBadge, ProcessingBadge, SeverityBadge } from "@/components/status";
 import { formatBytes, formatDateTime, pct } from "@/lib/utils";
-import { DocumentViewer } from "./viewer";
+import { DocumentViewer } from "@/components/app/document-viewer";
 
 export const metadata = { title: "Document" };
 

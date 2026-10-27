@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { CheckCircle2, FileUp, Loader2, RotateCcw, UploadCloud, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ export function UploadPanel({
   onDone?: () => void;
 }) {
   const router = useRouter();
+  const docBase = usePathname().startsWith("/portal") ? "/portal/documents" : "/documents";
   const input = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState(replace?.categoryCode ?? defaultCategory ?? categories[0]?.code ?? "");
@@ -144,7 +145,7 @@ export function UploadPanel({
       {phase.kind === "done" && (
         <div className={cn("flex items-start gap-2 rounded-md border px-3 py-2 text-xs", phase.ok ? "border-ok-line bg-ok-soft text-ok" : "border-warn-line bg-warn-soft text-warn")} aria-live="polite">
           {phase.ok ? <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" /> : <XCircle className="mt-0.5 size-3.5 shrink-0" />}
-          <span className="flex-1">{phase.message} {phase.documentId && <a className="font-medium underline" href={`/documents/${phase.documentId}`}>View extraction</a>}</span>
+          <span className="flex-1">{phase.message} {phase.documentId && <a className="font-medium underline" href={`${docBase}/${phase.documentId}`}>View extraction</a>}</span>
         </div>
       )}
       <Button onClick={upload} disabled={!file || busy || (replace && reason.trim().length < 5)} className="w-full" data-testid="upload-submit">

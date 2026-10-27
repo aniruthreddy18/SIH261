@@ -3,21 +3,20 @@ import { getActor } from "@/server/session";
 import { BrandMark, ValidationIllustration } from "@/components/brand";
 import { ROLE_THEME } from "@/lib/role-theme";
 import { LoginForm } from "./login-form";
+import { PortalSwitch } from "./portal-switch";
 import { DECISION_SUPPORT_DISCLAIMER, ROLE_LABELS, type Role } from "@/lib/domain";
 
-export const metadata = { title: "Sign in" };
+export const metadata = { title: "AICTE official sign-in" };
 
 const DEMO_ACCOUNTS: { email: string; role: Role; note: string }[] = [
   { email: "scrutiny@aegis.demo", role: "SCRUTINY_OFFICER", note: "Validation, issuer verification, manual confirmation, findings, rectification, forwarding." },
   { email: "senior@aegis.demo", role: "SENIOR_OFFICIAL", note: "Records the authorised review outcome." },
   { email: "admin@aegis.demo", role: "ADMIN", note: "Users, versioned rules, issuer sources, settings." },
-  { email: "applicant.meridian@aegis.demo", role: "APPLICANT", note: "Meridian Institute of Management — expired NOC (rectification demo)." },
-  { email: "applicant.lakeview@aegis.demo", role: "APPLICANT", note: "Lakeview College — rectification requested." },
-  { email: "applicant.greenfield@aegis.demo", role: "APPLICANT", note: "Greenfield College — draft awaiting validation." },
 ];
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  if (await getActor()) redirect("/");
+  const actor = await getActor();
+  if (actor) redirect(actor.role === "APPLICANT" ? "/portal" : "/");
   const { next } = await searchParams;
   const demo = process.env.DEMO_MODE !== "false";
   return (
@@ -52,13 +51,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </div>
       <div className="flex flex-1 items-start justify-center px-6 py-10 lg:items-center">
         <div className="w-full max-w-md">
-          <h2 className="text-lg font-semibold text-ink">Sign in</h2>
-          <p className="mt-1 text-xs text-muted">One sign-in for everyone. Your role decides what you see — each role has its own colour.</p>
-          <LoginForm next={next ?? "/"} />
+          <PortalSwitch current="OFFICIAL" />
+          <h2 className="mt-6 text-lg font-semibold text-ink">AICTE official sign-in</h2>
+          <p className="mt-1 text-xs text-muted">For scrutiny &amp; verification officers, competent authorities and administrators. Institutions use the <a href="/institution/login" className="font-medium text-green underline">Institution login</a>.</p>
+          <LoginForm next={next ?? "/"} portal="OFFICIAL" />
           {demo && (
             <div className="mt-8 rounded-lg border border-border bg-surface">
               <div className="border-b border-border px-4 py-2.5">
-                <p className="text-xs font-semibold text-ink">Demo accounts</p>
+                <p className="text-xs font-semibold text-ink">Demo official accounts</p>
                 <p className="text-[11px] text-muted">Password for all: <code className="rounded bg-subtle px-1 font-mono">Aegis@Demo2026</code>. Selecting an account fills the form; sign-in still goes through normal authentication.</p>
               </div>
               <ul className="divide-y divide-border">

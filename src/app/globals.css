@@ -89,6 +89,7 @@
   /* Thin three-colour rule used on the sign-in page and the top bar. */
   .tri-rule { background: linear-gradient(90deg, var(--color-saffron) 0 33.33%, var(--color-navy) 33.33% 66.66%, var(--color-green) 66.66% 100%); }
   /* Same rule for use on a navy background: the middle band is white. */
+  .tri-rule-on-green { background: linear-gradient(90deg, var(--color-saffron) 0 33.33%, #ffffff 33.33% 66.66%, var(--color-navy) 66.66% 100%); }
   .tri-rule-on-navy { background: linear-gradient(90deg, var(--color-saffron) 0 33.33%, #ffffff 33.33% 66.66%, var(--color-green) 66.66% 100%); }
 }
 
@@ -117,4 +118,12 @@ html[data-role="ADMIN"] {
   --color-accent-hover: var(--color-saffron-dark);
   --color-accent-soft: var(--color-saffron-soft);
   --color-accent-line: #f0cfa6;
+}
+
+/* Scoped themes for pages shown before sign-in (e.g. the institution sign-in page). */
+.theme-green {
+  --color-accent: var(--color-green);
+  --color-accent-hover: var(--color-green-dark);
+  --color-accent-soft: var(--color-green-soft);
+  --color-accent-line: #b9dcc7;
 }

@@ -10,7 +10,7 @@ import { Field, Input, Select } from "@/components/ui/input";
 
 interface Inst { id: string; code: string; name: string; category: string; programmes: { name: string; level: string; intake: number }[] }
 
-export function NewApplicationForm({ institutions, templates, defaultContact }: { institutions: Inst[]; templates: { code: string; name: string; description: string }[]; defaultContact: { name: string; email: string } | null }) {
+export function NewApplicationForm({ institutions, templates, defaultContact, portal = false }: { institutions: Inst[]; templates: { code: string; name: string; description: string }[]; defaultContact: { name: string; email: string } | null; portal?: boolean }) {
   const router = useRouter();
   const [instId, setInstId] = useState(institutions.length === 1 ? institutions[0].id : "");
   const inst = useMemo(() => institutions.find((i) => i.id === instId), [instId, institutions]);
@@ -49,7 +49,8 @@ export function NewApplicationForm({ institutions, templates, defaultContact }: 
       return;
     }
     toast.success(r.message);
-    router.push(`/applications/${(r.data as { id: string }).id}?tab=documents`);
+    const id = (r.data as { id: string }).id;
+    router.push(portal ? `/portal/applications/${id}?view=documents` : `/applications/${id}?tab=documents`);
   };
 
   return (

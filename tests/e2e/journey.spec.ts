@@ -6,12 +6,13 @@ const db = new PrismaClient({ datasourceUrl: "file:./e2e.db" });
 const PASSWORD = "Aegis@Demo2026";
 const sample = (f: string) => path.resolve(__dirname, "../../samples", f);
 
+/** Institutions use the Institution login; AICTE staff use the official sign-in. */
 async function signIn(page: Page, email: string) {
   await page.context().clearCookies();
-  await page.goto("/login");
+  await page.goto(email.startsWith("applicant.") ? "/institution/login" : "/login");
   await page.fill("#email", email);
   await page.fill("#password", PASSWORD);
-  await Promise.all([page.waitForURL((u) => !u.pathname.startsWith("/login")), page.click("button[type=submit]")]);
+  await Promise.all([page.waitForURL((u) => !u.pathname.includes("login")), page.click("button[type=submit]")]);
 }
 
 async function appId(name: string) {
@@ -35,23 +36,50 @@ test("rejects bad credentials and requires authentication", async ({ page, reque
   expect(res.status()).toBe(401);
 });
 
+test("keeps institutions and AICTE staff on separate sign-in portals", async ({ page }) => {
+  // An institution account is refused on the AICTE sign-in…
+  await page.goto("/login");
+  await page.fill("#email", "applicant.meridian@aegis.demo");
+  await page.fill("#password", PASSWORD);
+  await page.click("button[type=submit]");
+  await expect(page.getByRole("alert").filter({ hasText: "Please use the Institution login" })).toBeVisible();
+  // …and a staff account is refused on the Institution login.
+  await page.goto("/institution/login");
+  await page.fill("#email", "scrutiny@aegis.demo");
+  await page.fill("#password", PASSWORD);
+  await page.click("button[type=submit]");
+  await expect(page.getByRole("alert").filter({ hasText: "Please use the AICTE official sign-in" })).toBeVisible();
+  // Visiting the portal while signed out leads to the Institution login.
+  await page.goto("/portal/help");
+  await expect(page).toHaveURL(/\/institution\/login/);
+  // Officials cannot enter the portal.
+  await signIn(page, "scrutiny@aegis.demo");
+  await page.goto("/portal");
+  await expect(page).toHaveURL(/\/$/);
+});
+
 test("enforces role permissions and cross-institution isolation on the server", async ({ page }) => {
   const sunrise = await appId("Sunrise");
   await signIn(page, "applicant.meridian@aegis.demo");
-  await page.goto("/applications");
+  await expect(page).toHaveURL(/\/portal$/);
+  await page.goto("/portal/applications");
   await expect(page.getByText("Meridian Institute of Management").first()).toBeVisible();
   await expect(page.getByText("Sunrise Institute of Technology")).toHaveCount(0);
-  await page.goto(`/applications/${sunrise}`);
+  await page.goto(`/portal/applications/${sunrise}`);
   await expect(page.getByText("Record not found")).toBeVisible();
   expect((await page.request.get(`/api/applications/${sunrise}/report`)).status()).toBe(404);
   expect((await page.request.get(`/api/exports/audit`)).status()).toBe(403);
+  // Official pages send institution users back into their portal.
   await page.goto("/admin/users");
-  await expect(page.getByText("You do not have access to this page")).toBeVisible();
+  await expect(page).toHaveURL(/\/portal$/);
+  await page.goto(`/applications/${sunrise}`);
+  await expect(page).toHaveURL(new RegExp(`/portal/applications/${sunrise}$`));
+  await expect(page.getByText("Record not found")).toBeVisible();
 });
 
 test("rejects a renamed non-PDF upload with a clear message", async ({ page }) => {
   await signIn(page, "applicant.greenfield@aegis.demo");
-  await page.goto(`/applications/${await appId("Greenfield")}?tab=documents`);
+  await page.goto(`/portal/applications/${await appId("Greenfield")}?view=documents`);
   await page.getByTestId("upload-input").first().setInputFiles(sample("invalid-renamed-file.pdf"));
   await page.getByTestId("upload-submit").first().click();
   await expect(page.getByRole("alert").filter({ hasText: "does not match its .pdf extension" })).toBeVisible();
@@ -71,9 +99,11 @@ test("full journey: findings → rectification → revalidation → verification
   await expectToast(page, "returned for rectification");
   await expect(page.getByText("Rectification required").first()).toBeVisible();
 
-  // 2. Institution replaces the NOC and submits the rectification (revalidation runs).
+  // 2. In the Institution Portal, the institution replaces the NOC and submits the
+  //    rectification (revalidation runs).
   await signIn(page, "applicant.meridian@aegis.demo");
-  await page.goto(`/applications/${id}?tab=rectification`);
+  await expect(page.getByText("Correction requested").first()).toBeVisible();
+  await page.goto(`/portal/applications/${id}`);
   await page.getByRole("button", { name: "Upload replacement" }).first().click();
   const dialog = page.getByRole("dialog");
   await dialog.getByTestId("upload-input").setInputFiles(sample("meridian-fire-noc-renewed.pdf"));
@@ -85,7 +115,7 @@ test("full journey: findings → rectification → revalidation → verification
   await page.getByRole("dialog").locator("textarea").fill("Renewed NOC uploaded as requested.");
   await page.getByRole("dialog").getByRole("button", { name: "Submit corrections and revalidate" }).click();
   await expectToast(page, "Corrections submitted");
-  await page.goto(`/applications/${id}?tab=validation`);
+  await page.goto(`/portal/applications/${id}?view=results`);
   await expect(page.getByText("What changed since run #1")).toBeVisible();
   await expect(page.getByText("improved").first()).toBeVisible();
   await expect(page.getByTestId("app-status")).toHaveText("Automated checks passed");

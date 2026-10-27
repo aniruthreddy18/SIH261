@@ -5,7 +5,7 @@ import { loginAction } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({ next, portal }: { next: string; portal: "INSTITUTION" | "OFFICIAL" }) {
   const [state, action, pending] = useActionState(loginAction, undefined);
   const email = useRef<HTMLInputElement>(null);
   const password = useRef<HTMLInputElement>(null);
@@ -23,6 +23,7 @@ export function LoginForm({ next }: { next: string }) {
   return (
     <form action={action} className="mt-5 space-y-3">
       <input type="hidden" name="next" value={next} />
+      <input type="hidden" name="portal" value={portal} />
       <Field label="Email" htmlFor="email">
         <Input ref={email} id="email" name="email" type="email" autoComplete="username" required />
       </Field>
