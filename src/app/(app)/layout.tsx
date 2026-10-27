@@ -56,7 +56,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
           {actor.role === "ADMIN" && <div className="h-0.5 bg-saffron-bright" />}
         </div>
-        <div className="glass-bar border-b border-white/45 bg-white/22 shadow-[0_8px_24px_-18px_rgb(13_35_64/0.35)]">
+        <div className="glass-bar border-b border-white/45 bg-white/32 shadow-[0_8px_24px_-18px_rgb(13_35_64/0.35)]">
           <div className="w-full px-4 sm:px-6 lg:px-8">
             <TopNav items={items} reviewCount={reviewCount} />
           </div>

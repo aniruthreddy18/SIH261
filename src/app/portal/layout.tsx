@@ -36,7 +36,7 @@ export default async function PortalLayout({ children }: { children: React.React
             </div>
           </div>
         </div>
-        <div className="glass-bar border-b border-white/45 bg-white/22 shadow-[0_8px_24px_-18px_rgb(13_35_64/0.35)]">
+        <div className="glass-bar border-b border-white/45 bg-white/32 shadow-[0_8px_24px_-18px_rgb(13_35_64/0.35)]">
           <div className="w-full px-4 sm:px-6 lg:px-8">
             <PortalNav />
           </div>
