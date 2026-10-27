@@ -56,7 +56,7 @@ Three brand colours, taken from the dashboard artwork, are used across the site:
 | Senior Official | Saffron | Competent Authority Desk | Applications awaiting a decision (with the forwarding note), recent decisions |
 | Administrator | Dark blue + saffron | Administration Console | Users, rules, sources, audit volume, configuration changes |
 
-Every signed-in page sits on the project artwork (`public/backgrounds/aegis-backdrop.webp`: a campus, a map of India and a document being checked, with a tricolour wave). Dashboards show it clearly behind a frosted welcome panel; other pages fade it under a light scrim so tables stay readable. The artwork contains no state emblem or seal: the emblem in the source image was replaced with the Aegis shield-and-check mark, because the State Emblem of India may not be used without authorisation and the prototype must not look like an official government product.
+Every page, including both sign-in pages, sits on the project artwork (`public/backgrounds/aegis-backdrop.webp`: a campus, a map of India and a document being checked, with a tricolour wave). Dashboards and the sign-in pages show it clearly behind frosted panels; other pages fade it under a light scrim so tables stay readable. The artwork contains no state emblem or seal: the emblem in the source image was replaced with the Aegis shield-and-check mark, because the State Emblem of India may not be used without authorisation and the prototype must not look like an official government product.
 
 ## Quick start
 

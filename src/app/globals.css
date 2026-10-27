@@ -103,7 +103,8 @@
   /*
    * Signed-in backdrop: the project artwork (campus, documents being verified, map of India),
    * fixed behind the content. A sky-tinted scrim keeps tables and text readable; dashboards
-   * (pages with .dash-hero) use a lighter scrim so the artwork shows through.
+   * (pages with .dash-hero) and the sign-in pages (.app-backdrop-vivid) use a lighter scrim so
+   * the artwork shows through.
    */
   .app-backdrop {
     position: fixed;
@@ -115,7 +116,8 @@
       url("/backgrounds/aegis-backdrop.webp") 70% center / cover no-repeat,
       var(--color-bg);
   }
-  body:has(.dash-hero) .app-backdrop {
+  body:has(.dash-hero) .app-backdrop,
+  .app-backdrop-vivid {
     background:
       linear-gradient(180deg, rgb(238 245 253 / 0.05) 0%, rgb(238 245 253 / 0.35) 38%, rgb(238 245 253 / 0.82) 72%, rgb(238 245 253 / 0.9) 100%),
       url("/backgrounds/aegis-backdrop.webp") 70% center / cover no-repeat,
