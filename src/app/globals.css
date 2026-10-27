@@ -1,33 +1,64 @@
 @import "tailwindcss";
 
-/* Aegis design tokens — restrained administrative palette with one blue accent. */
+/*
+ * Aegis design tokens — a three-colour palette:
+ *   Navy    #163E6C  (officials, information)
+ *   Saffron #B45309  (senior official, attention / review)
+ *   Green   #17703F  (institutions, success)
+ * Neutrals (white/greys) carry the layout. Red is kept only for failures and errors so a
+ * failure can never be mistaken for a warning.
+ * The accent colour is re-mapped per signed-in role via <html data-role="…"> (see bottom).
+ */
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --color-bg: #f6f7f9;
+  /* Brand */
+  --color-navy: #163e6c;
+  --color-navy-dark: #0e2a4a;
+  --color-navy-soft: #eaf0f7;
+  --color-saffron: #b45309;
+  --color-saffron-dark: #8a3f06;
+  --color-saffron-soft: #fdf3e7;
+  --color-green: #17703f;
+  --color-green-dark: #115a32;
+  --color-green-soft: #e9f5ee;
+
+  /* Neutrals */
+  --color-bg: #f5f7fa;
   --color-surface: #ffffff;
-  --color-subtle: #f1f3f6;
-  --color-border: #e3e6eb;
-  --color-border-strong: #cfd4dc;
-  --color-ink: #0f172a;
-  --color-ink-2: #334155;
-  --color-muted: #64748b;
-  --color-faint: #94a3b8;
+  --color-subtle: #f1f4f8;
+  --color-border: #e2e7ee;
+  --color-border-strong: #ccd4de;
+  --color-ink: #0f1f33;
+  --color-ink-2: #34465c;
+  --color-muted: #637387;
+  --color-faint: #95a3b5;
 
-  --color-accent: #1d4ed8;
-  --color-accent-hover: #1e40af;
-  --color-accent-soft: #eff4ff;
+  /* Accent = the signed-in role's colour (default navy) */
+  --color-accent: #163e6c;
+  --color-accent-hover: #0e2a4a;
+  --color-accent-soft: #eaf0f7;
+  --color-accent-line: #c4d3e6;
 
-  --color-ok: #15803d;
-  --color-ok-soft: #ecfdf3;
+  /* Status, mapped onto the palette */
+  --color-ok: #17703f;
+  --color-ok-soft: #e9f5ee;
+  --color-ok-line: #b9dcc7;
+  --color-ok-ink: #0d4627;
   --color-warn: #b45309;
-  --color-warn-soft: #fffbeb;
-  --color-bad: #b91c1c;
-  --color-bad-soft: #fef2f2;
-  --color-info: #0369a1;
-  --color-info-soft: #f0f9ff;
-  --color-neutral-soft: #f1f5f9;
+  --color-warn-soft: #fdf3e7;
+  --color-warn-line: #f0cfa6;
+  --color-warn-ink: #6b3105;
+  --color-info: #163e6c;
+  --color-info-soft: #eaf0f7;
+  --color-info-line: #c4d3e6;
+  --color-info-ink: #0e2a4a;
+  --color-bad: #b42318;
+  --color-bad-soft: #fdf0ee;
+  --color-bad-line: #f3c3bd;
+  --color-bad-ink: #7a1710;
+  --color-neutral-soft: #f1f4f8;
 
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -36,9 +67,16 @@
 
 @layer base {
   html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
-  body { background: var(--color-bg); color: var(--color-ink); font-size: 14px; line-height: 1.45; }
+  body {
+    color: var(--color-ink);
+    font-size: 14px;
+    line-height: 1.45;
+    /* Project motif: faint line-art of documents being checked and a verification shield. */
+    background-color: var(--color-bg);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23163E6C' stroke-opacity='0.06' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 14h22l8 8v30a3 3 0 0 1-3 3H18a3 3 0 0 1-3-3V17a3 3 0 0 1 3-3z'/%3E%3Cpath d='M40 14v8h8M22 28h18M22 34h18M22 40h12'/%3E%3Cpath d='M27 47l4 4 8-8'/%3E%3Cpath d='M112 92l14 5v11c0 9-6 15-14 18-8-3-14-9-14-18V97z'/%3E%3Cpath d='M106 108l4 4 8-8'/%3E%3Ccircle cx='118' cy='30' r='9'/%3E%3Cpath d='M124.5 36.5l8 8'/%3E%3Cpath d='M30 112h26M30 120h18M30 128h22'/%3E%3Ccircle cx='70' cy='124' r='5'/%3E%3C/g%3E%3C/svg%3E");
+  }
   :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-  ::selection { background: #dbe6ff; }
+  ::selection { background: var(--color-accent-soft); }
   table { border-collapse: collapse; }
   /* Let grid items shrink below their content width (prevents horizontal overflow on phones). */
   .grid > * { min-width: 0; }
@@ -46,6 +84,37 @@
 
 @layer components {
   .tabular { font-variant-numeric: tabular-nums; }
-  .highlight-box { position: absolute; border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.18); border-radius: 2px; pointer-events: none; }
-  .highlight-box.active { border-color: #1d4ed8; background: rgba(29, 78, 216, 0.16); }
+  .highlight-box { position: absolute; border: 2px solid var(--color-saffron); background: rgba(180, 83, 9, 0.16); border-radius: 2px; pointer-events: none; }
+  .highlight-box.active { border-color: var(--color-accent); background: rgba(22, 62, 108, 0.16); }
+  /* Thin three-colour rule used on the sign-in page and the top bar. */
+  .tri-rule { background: linear-gradient(90deg, var(--color-saffron) 0 33.33%, var(--color-navy) 33.33% 66.66%, var(--color-green) 66.66% 100%); }
+  /* Same rule for use on a navy background: the middle band is white. */
+  .tri-rule-on-navy { background: linear-gradient(90deg, var(--color-saffron) 0 33.33%, #ffffff 33.33% 66.66%, var(--color-green) 66.66% 100%); }
+}
+
+/* ---- Role themes: each user type sees its own colour -------------------------------- */
+html[data-role="APPLICANT"] {
+  --color-accent: var(--color-green);
+  --color-accent-hover: var(--color-green-dark);
+  --color-accent-soft: var(--color-green-soft);
+  --color-accent-line: #b9dcc7;
+}
+html[data-role="SCRUTINY_OFFICER"] {
+  --color-accent: var(--color-navy);
+  --color-accent-hover: var(--color-navy-dark);
+  --color-accent-soft: var(--color-navy-soft);
+  --color-accent-line: #c4d3e6;
+}
+html[data-role="SENIOR_OFFICIAL"] {
+  --color-accent: var(--color-saffron);
+  --color-accent-hover: var(--color-saffron-dark);
+  --color-accent-soft: var(--color-saffron-soft);
+  --color-accent-line: #f0cfa6;
+}
+/* Administrator: dark navy band with saffron actions, distinct from the officer's navy. */
+html[data-role="ADMIN"] {
+  --color-accent: var(--color-saffron);
+  --color-accent-hover: var(--color-saffron-dark);
+  --color-accent-soft: var(--color-saffron-soft);
+  --color-accent-line: #f0cfa6;
 }

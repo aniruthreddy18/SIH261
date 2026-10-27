@@ -107,7 +107,7 @@ export function ProcessingBadge({ status }: { status: string }) {
 export function ConfidenceMeter({ value, corrected }: { value: number; corrected?: boolean }) {
   if (corrected) return <Badge tone="accent">Reviewer-corrected</Badge>;
   const p = Math.round(value * 100);
-  const color = p >= 85 ? "bg-ok" : p >= 60 ? "bg-amber-500" : "bg-bad";
+  const color = p >= 85 ? "bg-ok" : p >= 60 ? "bg-warn" : "bg-bad";
   return (
     <span className="inline-flex items-center gap-1.5" title={`Extraction confidence ${p}%`}>
       <span className="h-1.5 w-12 overflow-hidden rounded-full bg-border">

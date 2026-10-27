@@ -91,7 +91,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
             <span className="font-mono text-xs text-ink-2">{app.reference}</span>
             <span className="text-faint">·</span>
             <span className="text-xs text-muted">{app.template.name} · AY {app.academicYear}</span>
-            <ApplicationStatusBadge status={status} />
+            <span data-testid="app-status"><ApplicationStatusBadge status={status} /></span>
           </>
         }
         actions={
@@ -132,7 +132,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
 
       <ol className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-label="Workflow progress">
         {steps.map((s, i) => (
-          <li key={s.label} className={cn("flex items-start gap-2.5 rounded-lg border bg-surface px-3 py-2.5", s.done ? "border-green-200" : "border-border")}>
+          <li key={s.label} className={cn("flex items-start gap-2.5 rounded-lg border bg-surface px-3 py-2.5", s.done ? "border-ok-line" : "border-border")}>
             <span className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold", s.done ? "bg-ok text-white" : "border border-border-strong text-muted")}>{s.done ? <Check className="size-3" /> : i + 1}</span>
             <div className="min-w-0">
               <p className="text-[13px] font-medium text-ink">{s.label}</p>

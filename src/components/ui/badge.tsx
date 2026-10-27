@@ -5,12 +5,12 @@ import { cn } from "@/lib/utils";
 export const badgeVariants = cva("inline-flex items-center gap-1 rounded-[4px] border px-1.5 py-0.5 text-[11px] font-medium leading-4 whitespace-nowrap", {
   variants: {
     tone: {
-      neutral: "border-slate-200 bg-neutral-soft text-ink-2",
-      ok: "border-green-200 bg-ok-soft text-ok",
-      warn: "border-amber-200 bg-warn-soft text-warn",
-      bad: "border-red-200 bg-bad-soft text-bad",
-      info: "border-sky-200 bg-info-soft text-info",
-      accent: "border-blue-200 bg-accent-soft text-accent",
+      neutral: "border-border bg-neutral-soft text-ink-2",
+      ok: "border-ok-line bg-ok-soft text-ok",
+      warn: "border-warn-line bg-warn-soft text-warn",
+      bad: "border-bad-line bg-bad-soft text-bad",
+      info: "border-info-line bg-info-soft text-info",
+      accent: "border-accent-line bg-accent-soft text-accent",
       outline: "border-border-strong bg-surface text-ink-2",
     },
   },

@@ -116,7 +116,7 @@ export function NewApplicationForm({ institutions, templates, defaultContact }: 
             <Field label="Phone (optional)" htmlFor="contactPhone"><Input id="contactPhone" name="contactPhone" /></Field>
           </CardBody>
         </Card>
-        {error && <p role="alert" className="rounded-md border border-red-200 bg-bad-soft px-3 py-2 text-xs text-bad">{error}</p>}
+        {error && <p role="alert" className="rounded-md border border-bad-line bg-bad-soft px-3 py-2 text-xs text-bad">{error}</p>}
         <Button type="submit" className="w-full" disabled={pending || !instId}>{pending && <Loader2 className="animate-spin" />} Create application</Button>
       </div>
     </form>

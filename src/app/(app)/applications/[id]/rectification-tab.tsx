@@ -25,7 +25,7 @@ export function RectificationTab({ detail, actor, categories, maxMb }: { detail:
     <div className="grid gap-4 xl:grid-cols-3">
       <div className="space-y-4 xl:col-span-2">
         {canSubmit && open && (
-          <Card className="border-amber-300">
+          <Card className="border-warn-line">
             <CardHeader title="Rectification requested" description={`Requested by ${open.requestedBy} on ${formatDateTime(open.createdAt)}${open.dueDate ? ` · due ${formatDate(open.dueDate)}` : ""}`} />
             <CardBody className="space-y-3">
               <Notice tone="warn">{open.message}</Notice>

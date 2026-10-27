@@ -9,6 +9,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  devIndicators: false,
   // Separate build dir lets the E2E server run alongside a dev server.
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // Native / worker-based packages must not be bundled by webpack.

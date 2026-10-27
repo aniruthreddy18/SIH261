@@ -88,7 +88,7 @@ test("full journey: findings → rectification → revalidation → verification
   await page.goto(`/applications/${id}?tab=validation`);
   await expect(page.getByText("What changed since run #1")).toBeVisible();
   await expect(page.getByText("improved").first()).toBeVisible();
-  await expect(page.getByText("Automated checks passed").first()).toBeVisible();
+  await expect(page.getByTestId("app-status")).toHaveText("Automated checks passed");
 
   // 3. The scrutiny & verification officer verifies the new NOC against the (simulated) issuer.
   await signIn(page, "scrutiny@aegis.demo");

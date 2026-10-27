@@ -40,7 +40,7 @@ export function ApplicationsTable({ rows }: { rows: AppRow[] }) {
               {a.lastRun ? (
                 <div className="flex items-center gap-2" title={`Run #${a.lastRun.runNumber}: ${a.lastRun.passed} of ${a.lastRun.total} checks passed or not applicable`}>
                   <span className="h-1.5 w-20 overflow-hidden rounded-full bg-border">
-                    <span className={`block h-full ${a.lastRun.passRatio === 1 ? "bg-ok" : a.lastRun.passRatio > 0.85 ? "bg-amber-500" : "bg-bad"}`} style={{ width: `${Math.round(a.lastRun.passRatio * 100)}%` }} />
+                    <span className={`block h-full ${a.lastRun.passRatio === 1 ? "bg-ok" : a.lastRun.passRatio > 0.85 ? "bg-warn" : "bg-bad"}`} style={{ width: `${Math.round(a.lastRun.passRatio * 100)}%` }} />
                   </span>
                   <span className="tabular text-[11px] text-muted">{a.lastRun.passed}/{a.lastRun.total}</span>
                 </div>

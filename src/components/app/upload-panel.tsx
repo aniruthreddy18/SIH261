@@ -135,14 +135,14 @@ export function UploadPanel({
       )}
       {phase.kind === "processing" && <p className="flex items-center gap-2 text-xs text-info" aria-live="polite"><Loader2 className="size-3.5 animate-spin" /> Validating file and extracting text/fields (OCR may take a few seconds)…</p>}
       {phase.kind === "error" && (
-        <div role="alert" className="flex items-start gap-2 rounded-md border border-red-200 bg-bad-soft px-3 py-2 text-xs text-bad">
+        <div role="alert" className="flex items-start gap-2 rounded-md border border-bad-line bg-bad-soft px-3 py-2 text-xs text-bad">
           <XCircle className="mt-0.5 size-3.5 shrink-0" />
           <span className="flex-1">{phase.message}</span>
           {file && <button className="flex items-center gap-1 font-medium underline" onClick={upload}><RotateCcw className="size-3" /> Retry</button>}
         </div>
       )}
       {phase.kind === "done" && (
-        <div className={cn("flex items-start gap-2 rounded-md border px-3 py-2 text-xs", phase.ok ? "border-green-200 bg-ok-soft text-ok" : "border-amber-200 bg-warn-soft text-warn")} aria-live="polite">
+        <div className={cn("flex items-start gap-2 rounded-md border px-3 py-2 text-xs", phase.ok ? "border-ok-line bg-ok-soft text-ok" : "border-warn-line bg-warn-soft text-warn")} aria-live="polite">
           {phase.ok ? <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" /> : <XCircle className="mt-0.5 size-3.5 shrink-0" />}
           <span className="flex-1">{phase.message} {phase.documentId && <a className="font-medium underline" href={`/documents/${phase.documentId}`}>View extraction</a>}</span>
         </div>

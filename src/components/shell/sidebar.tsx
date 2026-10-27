@@ -6,10 +6,13 @@ import { BadgeCheck, ChevronsLeft, ChevronsRight, FolderOpen, Gauge, History, In
 import { BrandMark } from "@/components/brand";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "./nav";
+import { ROLE_THEME } from "@/lib/role-theme";
+import { ROLE_LABELS, type Role } from "@/lib/domain";
 
 const ICONS: Record<string, typeof Gauge> = { gauge: Gauge, folder: FolderOpen, scan: ScanText, list: ListChecks, badge: BadgeCheck, inbox: Inbox, shield: ShieldCheck, history: History, users: Users, settings: Settings };
 
-export function Sidebar({ items, reviewCount }: { items: NavItem[]; reviewCount: number }) {
+export function Sidebar({ items, reviewCount, role, institution }: { items: NavItem[]; reviewCount: number; role: Role; institution?: string | null }) {
+  const theme = ROLE_THEME[role];
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -41,7 +44,7 @@ export function Sidebar({ items, reviewCount }: { items: NavItem[]; reviewCount:
         aria-current={active ? "page" : undefined}
         className={cn(
           "group flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium transition-colors",
-          active ? "bg-accent-soft text-accent" : "text-ink-2 hover:bg-subtle hover:text-ink",
+          active ? "bg-accent-soft text-accent shadow-[inset_3px_0_0_var(--color-accent)]" : "text-ink-2 hover:bg-subtle hover:text-ink",
           collapsed && "lg:justify-center lg:px-0",
         )}
       >
@@ -65,15 +68,24 @@ export function Sidebar({ items, reviewCount }: { items: NavItem[]; reviewCount:
         )}
         aria-label="Main navigation"
       >
-        <div className={cn("flex h-14 items-center gap-2.5 border-b border-border px-4", collapsed && "lg:justify-center lg:px-0")}>
-          <BrandMark />
-          <div className={cn("min-w-0", collapsed && "lg:hidden")}>
-            <p className="text-sm font-semibold leading-4 text-ink">Aegis</p>
-            <p className="truncate text-[10.5px] text-muted">Validation &amp; Compliance Intelligence</p>
+        {/* Role band: the colour and portal name tell each user type apart at a glance. */}
+        <div className={cn("text-white", theme.band)}>
+          <div className={cn("flex h-14 items-center gap-2.5 px-4", collapsed && "lg:justify-center lg:px-0")}>
+            <BrandMark inverted />
+            <div className={cn("min-w-0", collapsed && "lg:hidden")}>
+              <p className="text-sm font-semibold leading-4">Aegis</p>
+              <p className="truncate text-[10.5px] text-white/80">{theme.portal}</p>
+            </div>
+            <button className="ml-auto rounded p-1 text-white/80 lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Close navigation">
+              <X className="size-4" />
+            </button>
           </div>
-          <button className="ml-auto rounded p-1 text-muted lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Close navigation">
-            <X className="size-4" />
-          </button>
+          <div className={cn("border-t border-white/15 px-4 py-2", collapsed && "lg:hidden")}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70">Signed in as</p>
+            <p className="truncate text-[12.5px] font-medium">{ROLE_LABELS[role]}</p>
+            {institution && <p className="truncate text-[11px] text-white/80">{institution}</p>}
+          </div>
+          {role === "ADMIN" && <div className="h-1 bg-saffron" />}
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
           {main.map(link)}
@@ -85,6 +97,7 @@ export function Sidebar({ items, reviewCount }: { items: NavItem[]; reviewCount:
             </>
           )}
         </nav>
+        <p className={cn("border-t border-border px-4 py-2 text-[10.5px] text-faint", collapsed && "lg:hidden")} title="All data is synthetic; issuer verification uses simulated sources.">Demo environment · synthetic data</p>
         <div className="hidden border-t border-border p-2 lg:block">
           <button onClick={toggle} className={cn("flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-xs text-muted hover:bg-subtle hover:text-ink", collapsed && "justify-center px-0")} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
             {collapsed ? <ChevronsRight className="size-4" /> : <><ChevronsLeft className="size-4" /> Collapse</>}

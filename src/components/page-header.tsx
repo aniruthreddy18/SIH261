@@ -43,7 +43,7 @@ export function EmptyState({ icon, title, description, action }: { icon?: React.
 }
 
 export function Notice({ tone = "info", title, children }: { tone?: "info" | "warn" | "bad" | "ok"; title?: string; children: React.ReactNode }) {
-  const cls = { info: "border-sky-200 bg-info-soft text-sky-900", warn: "border-amber-200 bg-warn-soft text-amber-900", bad: "border-red-200 bg-bad-soft text-red-900", ok: "border-green-200 bg-ok-soft text-green-900" }[tone];
+  const cls = { info: "border-info-line bg-info-soft text-info-ink", warn: "border-warn-line bg-warn-soft text-warn-ink", bad: "border-bad-line bg-bad-soft text-bad-ink", ok: "border-ok-line bg-ok-soft text-ok-ink" }[tone];
   return (
     <div className={`rounded-md border px-3.5 py-2.5 text-[13px] ${cls}`} role={tone === "bad" ? "alert" : "note"}>
       {title && <p className="font-semibold">{title}</p>}

@@ -29,7 +29,7 @@ export function LoginForm({ next }: { next: string }) {
       <Field label="Password" htmlFor="password">
         <Input ref={password} id="password" name="password" type="password" autoComplete="current-password" required />
       </Field>
-      {state?.error && <p role="alert" className="rounded-md border border-red-200 bg-bad-soft px-3 py-2 text-xs text-bad">{state.error}</p>}
+      {state?.error && <p role="alert" className="rounded-md border border-bad-line bg-bad-soft px-3 py-2 text-xs text-bad">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? <Loader2 className="animate-spin" /> : <LogIn />} Sign in
       </Button>

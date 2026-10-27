@@ -11,7 +11,7 @@ export function ReviewTab({ detail }: { detail: Detail }) {
   return (
     <div className="space-y-4">
       {decision && (
-        <Card className="border-blue-200">
+        <Card className="border-accent-line">
           <CardHeader title="Recorded human review outcome" description={`${decision.actorName} (${ROLE_LABELS[decision.actorRole as Role]}) · ${formatDateTime(decision.createdAt)} · Ref ${decision.reference}`} />
           <div className="space-y-2 px-4 py-3 text-[13px]">
             <p className="font-semibold text-ink">{DECISION_OUTCOMES[decision.outcome as DecisionOutcome] ?? decision.outcome}</p>

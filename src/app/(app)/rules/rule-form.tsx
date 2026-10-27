@@ -154,7 +154,7 @@ export function RuleForm({ initial, categories, templates }: { initial: RuleForm
                 <div className="md:col-span-3">{outcomeSelect("missingOutcome", "If the field cannot be located")}</div>
               </div>
             )}
-            <div className="rounded-md border border-blue-100 bg-accent-soft/60 px-3 py-2 text-xs text-ink-2"><span className="font-semibold">Preview: </span>{preview}</div>
+            <div className="rounded-md border border-accent-line bg-accent-soft/60 px-3 py-2 text-xs text-ink-2"><span className="font-semibold">Preview: </span>{preview}</div>
           </CardBody>
         </Card>
       </div>

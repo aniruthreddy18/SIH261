@@ -2,9 +2,9 @@
 
 Preparation: `npm run db:reset && npm run dev` and open http://localhost:3000. Password for all accounts: `Aegis@Demo2026`. Keep the `samples/` folder open.
 
-**0:00 — Framing (20 s).** Sign in as `scrutiny@aegis.demo`. Point to the *DEMO ENVIRONMENT* badge and the disclaimer: decision support, not an approval engine. All data is synthetic, and issuer sources are simulated and labelled.
+**0:00 — Framing (20 s).** Sign in as `scrutiny@aegis.demo`. Point to the navy *Scrutiny & Verification Desk* band (each role has its own colour), the *Demo environment* label and the disclaimer: decision support, not an approval engine. All data is synthetic, and issuer sources are simulated and labelled.
 
-**0:20 — Command Centre (30 s).** Six live metrics computed from the database, the status distribution, and "Attention required" sorted by severity. Click the **Meridian** expired-certificate item.
+**0:20 — Command Centre (30 s).** Five live tiles computed from the database and "Attention required" sorted by severity. (Each role gets its own dashboard: green Institution Portal, navy officer desk, saffron Competent Authority Desk, dark-navy Administration Console.) Click the **Meridian** expired-certificate item.
 
 **0:50 — Demo A: automatic validation with evidence (50 s).** Open **Findings**: *"Validity does not cover the required date: valid until 31 Mar 2027, must remain valid on 01 Jul 2027 (start of AY 2027-28)"*, with rule `DATE-VAL-001 v2`, the page reference and the source excerpt. Click the document link: the server-rendered page with the **highlighted extraction region**. Show the confidence values and the "Correct value" action (machine value retained, correction audited). Note the rule is a *sample* rule with two immutable versions (Validation Rules).
 

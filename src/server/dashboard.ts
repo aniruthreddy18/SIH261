@@ -56,3 +56,43 @@ export async function getDashboard(actor: Actor) {
     recentReviews,
   };
 }
+
+const CONFIG_EVENTS = ["RULE_VERSION_CREATED", "RULE_STATUS_CHANGED", "USER_CREATED", "USER_UPDATED", "SETTINGS_UPDATED", "ISSUER_SOURCE_UPDATED", "ALERT_SWEEP_RUN"];
+
+/** Data that only one role's dashboard needs. */
+export async function getRoleExtras(actor: Actor) {
+  const scope = applicationScope(actor);
+  if (actor.role === "APPLICANT") {
+    const rectifications = await prisma.rectificationRequest.findMany({
+      where: { status: "OPEN", application: scope },
+      include: { application: { select: { id: true, reference: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+    return { kind: "APPLICANT" as const, rectifications };
+  }
+  if (actor.role === "SENIOR_OFFICIAL") {
+    const [awaiting, decisions] = await Promise.all([
+      prisma.application.findMany({
+        where: { status: "READY_FOR_AUTHORIZED_REVIEW" },
+        orderBy: { updatedAt: "asc" },
+        include: { reviewActions: { where: { action: "FORWARD" }, orderBy: { createdAt: "desc" }, take: 1 } },
+      }),
+      prisma.reviewAction.findMany({ where: { action: "DECISION" }, orderBy: { createdAt: "desc" }, take: 6, include: { application: { select: { id: true, reference: true, institutionName: true } } } }),
+    ]);
+    return { kind: "SENIOR_OFFICIAL" as const, awaiting, decisions };
+  }
+  if (actor.role === "ADMIN") {
+    const since = new Date(Date.now() - 86_400_000);
+    const [activeUsers, totalUsers, activeRules, ruleVersions, sources, auditToday, configChanges] = await Promise.all([
+      prisma.user.count({ where: { active: true } }),
+      prisma.user.count(),
+      prisma.validationRule.count({ where: { active: true } }),
+      prisma.ruleVersion.count(),
+      prisma.issuerSource.findMany({ select: { enabled: true } }),
+      prisma.auditEvent.count({ where: { createdAt: { gte: since } } }),
+      prisma.auditEvent.findMany({ where: { eventType: { in: CONFIG_EVENTS } }, orderBy: { createdAt: "desc" }, take: 8 }),
+    ]);
+    return { kind: "ADMIN" as const, activeUsers, totalUsers, activeRules, ruleVersions, sourcesEnabled: sources.filter((s) => s.enabled).length, sourcesTotal: sources.length, auditToday, configChanges };
+  }
+  return { kind: "OFFICER" as const };
+}

@@ -12,7 +12,7 @@ export const buttonVariants = cva(
         secondary: "bg-subtle text-ink hover:bg-border",
         outline: "border border-border-strong bg-surface text-ink hover:bg-subtle",
         ghost: "text-ink-2 hover:bg-subtle hover:text-ink",
-        destructive: "bg-bad text-white hover:bg-red-800",
+        destructive: "bg-bad text-white hover:bg-bad-ink",
         link: "text-accent underline-offset-4 hover:underline px-0 h-auto",
       },
       size: { default: "h-9 px-3.5", sm: "h-8 px-2.5 text-xs", xs: "h-7 px-2 text-xs", icon: "h-9 w-9" },

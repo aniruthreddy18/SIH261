@@ -45,6 +45,19 @@ Workflow: **Application → Documents → Validation → Verification → Review
 | Recorded decisions | Senior officials record an outcome with reasons and a reference, labelled as a *recorded human review action*. |
 | Audit, reports, alerts | Append-only audit log (DB triggers block UPDATE/DELETE), CSV exports, PDF/JSON validation report, in-app notifications. |
 
+### Look and feel
+
+Three brand colours are used across the site: **navy `#163E6C`**, **saffron `#B45309`** and **green `#17703F`**, plus neutral greys. Red appears only for failures and errors, so a failure is never confused with a warning. Each role has its own colour and its own dashboard:
+
+| Role | Colour | Portal name | Dashboard focus |
+|---|---|---|---|
+| Institution Applicant | Green | Institution Portal | My applications, rectification requests with due dates, "What you need to do" |
+| Scrutiny & Verification Officer | Navy | Scrutiny & Verification Desk | Work queues (validation, review, verification), attention list, recent activity |
+| Senior Official | Saffron | Competent Authority Desk | Applications awaiting a decision (with the forwarding note), recent decisions |
+| Administrator | Dark navy + saffron | Administration Console | Users, rules, sources, audit volume, configuration changes |
+
+The background carries a faint line-art motif of documents, magnifiers and verification shields; dashboards and the sign-in page show a larger version of the same illustration.
+
 ## Quick start
 
 **Prerequisites:** Node.js 20+ (tested on 22) and npm. No external services, API keys or system OCR packages are needed. OCR language data ships with the npm package `@tesseract.js-data/eng`.
