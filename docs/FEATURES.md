@@ -31,7 +31,7 @@
 | PDF / JSON validation report, applications CSV | ✅ | Applicant redaction |
 | In-app notifications, ageing alert sweep | ✅ | No e-mail claimed |
 | Admin: users, settings, issuer sources | ✅ | |
-| Responsive layout (desktop, tablet, phone) | ✅ | Collapsible sidebar, off-canvas on mobile |
+| Responsive layout (desktop, tablet, phone) | ✅ | Horizontal top navbar that scrolls sideways on small screens |
 
 ## Future extensions
 

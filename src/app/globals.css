@@ -20,10 +20,13 @@
   --color-navy: #15509a;
   --color-navy-dark: #0d3a73;
   --color-navy-soft: #e8f1fc;
+  --color-navy-light: #2d7dd2;
+  --color-navy-deep: #081f3f;
   --color-saffron: #b85a00;
   --color-saffron-dark: #8f4600;
   --color-saffron-soft: #fff3e3;
   --color-saffron-bright: #f59f25;
+  --color-saffron-light: #d97a12;
   --color-green: #1d7a45;
   --color-green-dark: #145c33;
   --color-green-soft: #e8f6ee;
@@ -112,24 +115,32 @@
     z-index: -1;
     pointer-events: none;
     background:
-      linear-gradient(180deg, rgb(238 245 253 / 0.84) 0%, rgb(238 245 253 / 0.9) 100%),
+      linear-gradient(180deg, rgb(238 245 253 / 0.45) 0%, rgb(238 245 253 / 0.6) 100%),
       url("/backgrounds/aegis-backdrop.webp") 70% center / cover no-repeat,
       var(--color-bg);
   }
   body:has(.dash-hero) .app-backdrop,
   .app-backdrop-vivid {
     background:
-      linear-gradient(180deg, rgb(238 245 253 / 0.05) 0%, rgb(238 245 253 / 0.35) 38%, rgb(238 245 253 / 0.82) 72%, rgb(238 245 253 / 0.9) 100%),
+      linear-gradient(180deg, rgb(238 245 253 / 0) 0%, rgb(238 245 253 / 0.12) 40%, rgb(238 245 253 / 0.4) 100%),
       url("/backgrounds/aegis-backdrop.webp") 70% center / cover no-repeat,
       var(--color-bg);
   }
   /* Frosted panel for text placed over the artwork. */
   .glass {
-    background: rgb(255 255 255 / 0.8);
+    background: rgb(255 255 255 / 0.72);
     border: 1px solid rgb(255 255 255 / 0.85);
     box-shadow: 0 8px 28px -12px rgb(13 35 64 / 0.25);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
+  }
+  /* Content cards: translucent white so the artwork stays visible behind them. */
+  .glass-card {
+    background: rgb(255 255 255 / 0.76);
+    border-color: rgb(255 255 255 / 0.8);
+    box-shadow: 0 6px 22px -14px rgb(13 35 64 / 0.35);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    backdrop-filter: blur(12px) saturate(1.2);
   }
 }
 

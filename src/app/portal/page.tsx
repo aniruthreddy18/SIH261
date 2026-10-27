@@ -3,11 +3,12 @@ import { BadgeCheck, CalendarClock, FileClock, FilePlus2, FileWarning, FolderOpe
 import { listApplications } from "@/server/applications";
 import { prisma } from "@/server/db";
 import { requireActor } from "@/server/session";
-import { DashboardHero, HeroLink } from "@/components/dashboard-hero";
+import { DashboardHero, HeroLink, TILE_TONES } from "@/components/dashboard-hero";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/page-header";
 import { ApplicationCard } from "@/components/portal/application-card";
 import { formatDate } from "@/lib/utils";
+import { ROLE_THEME } from "@/lib/role-theme";
 
 export const metadata = { title: "Home" };
 
@@ -32,7 +33,7 @@ export default async function PortalHome() {
   return (
     <>
       <DashboardHero
-        band="bg-green"
+        band={ROLE_THEME.APPLICANT.header}
         eyebrow="Institution Portal"
         title={`Welcome, ${actor.name}`}
         subtitle={<>{institution?.name} — submit your documents, see what the checks found, and fix anything flagged.</>}
@@ -45,10 +46,10 @@ export default async function PortalHome() {
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {tiles.map(({ label, value, Icon }) => (
-          <div key={label} className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3.5">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent"><Icon className="size-5" /></span>
-            <span><span className="block text-2xl font-semibold leading-7 text-ink tabular">{value}</span><span className="block text-xs text-muted">{label}</span></span>
+        {tiles.map(({ label, value, Icon }, i) => (
+          <div key={label} className="glass-card flex items-center gap-3 rounded-xl border px-4 py-3.5">
+            <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br text-white shadow-sm ${TILE_TONES[[3, 1, 2, 0][i % 4]]}`}><Icon className="size-5" /></span>
+            <span><span className="block text-2xl font-semibold leading-7 text-ink tabular">{value}</span><span className="block text-xs text-ink-2">{label}</span></span>
           </div>
         ))}
       </div>

@@ -150,13 +150,13 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
         {changedSinceRun && status !== "CLOSED" && <Notice tone="warn" title="Evidence changed since the last validation run">Run #{lastRun!.runNumber} did not evaluate the latest document versions. {canValidate ? "Run validation to update the results." : isApplicant && status === "RECTIFICATION_REQUIRED" ? "Submit your rectification on the Rectification tab to trigger revalidation." : ""}</Notice>}
       </div>
 
-      <nav className="mb-4 flex gap-1 overflow-x-auto border-b border-border" aria-label="Application sections">
+      <nav className="glass-card mb-4 flex gap-1 overflow-x-auto rounded-xl border px-2" aria-label="Application sections">
         {tabs.map((t) => (
           <Link
             key={t.key}
             href={`/applications/${app.id}?tab=${t.key}`}
             scroll={false}
-            className={cn("-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-[13px] font-medium", tab === t.key ? "border-accent text-accent" : "border-transparent text-muted hover:text-ink")}
+            className={cn("my-1.5 flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors", tab === t.key ? "bg-accent-soft text-accent shadow-[inset_0_0_0_1px_var(--color-accent-line)]" : "text-ink-2 hover:bg-subtle hover:text-ink")}
             aria-current={tab === t.key ? "page" : undefined}
           >
             {t.label}

@@ -38,3 +38,12 @@ export function HeroLink({ href, icon, primary = false, children }: { href: stri
     </Link>
   );
 }
+
+/** Icon-chip gradients for the stat tiles, cycled in order so neighbouring tiles differ. */
+export const TILE_TONES = [
+  "from-navy to-navy-light",
+  "from-saffron to-saffron-bright",
+  "from-teal to-teal-bright",
+  "from-green to-green-bright",
+  "from-navy-deep to-navy",
+];

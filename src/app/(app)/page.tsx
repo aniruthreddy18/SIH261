@@ -15,7 +15,7 @@ import { EmptyState } from "@/components/page-header";
 import { Card, CardHeader } from "@/components/ui/card";
 import { SeverityBadge } from "@/components/status";
 import { ApplicationsTable } from "@/components/app/applications-table";
-import { DashboardHero, HeroLink } from "@/components/dashboard-hero";
+import { DashboardHero, HeroLink, TILE_TONES } from "@/components/dashboard-hero";
 import { cn, formatDate, formatDateTime, relativeAge } from "@/lib/utils";
 
 export const metadata = { title: "Dashboard" };
@@ -27,7 +27,7 @@ function Hero({ actor, institution, actions }: { actor: Actor; institution?: str
   const theme = ROLE_THEME[actor.role];
   return (
     <DashboardHero
-      band={theme.band}
+      band={theme.header}
       eyebrow={theme.portal}
       title={`Welcome, ${actor.name}`}
       subtitle={<>{ROLE_LABELS[actor.role]}{institution ? ` · ${institution}` : ""} — {theme.purpose}</>}
@@ -39,12 +39,12 @@ function Hero({ actor, institution, actions }: { actor: Actor; institution?: str
 function Tiles({ tiles }: { tiles: { label: string; value: number | string; href: string; icon: React.ReactNode; hint: string }[] }) {
   return (
     <div className={cn("grid grid-cols-2 gap-3", tiles.length >= 5 ? "md:grid-cols-3 xl:grid-cols-5" : "md:grid-cols-4")}>
-      {tiles.map((t) => (
-        <Link key={t.label} href={t.href} title={t.hint} className="group flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3.5 transition-colors hover:border-accent-line">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent [&_svg]:size-5">{t.icon}</span>
+      {tiles.map((t, i) => (
+        <Link key={t.label} href={t.href} title={t.hint} className="glass-card group flex items-center gap-3 rounded-xl border px-4 py-3.5 transition hover:-translate-y-0.5 hover:shadow-md">
+          <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br text-white shadow-sm [&_svg]:size-5", TILE_TONES[i % TILE_TONES.length])}>{t.icon}</span>
           <span className="min-w-0">
             <span className="block text-2xl font-semibold leading-7 text-ink tabular">{t.value}</span>
-            <span className="block truncate text-xs text-muted">{t.label}</span>
+            <span className="block truncate text-xs text-ink-2">{t.label}</span>
           </span>
         </Link>
       ))}
