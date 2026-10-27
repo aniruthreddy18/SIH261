@@ -47,16 +47,16 @@ Workflow: **Application → Documents → Validation → Verification → Review
 
 ### Look and feel
 
-Three brand colours are used across the site: **navy `#163E6C`**, **saffron `#B45309`** and **green `#17703F`**, plus neutral greys. Red appears only for failures and errors, so a failure is never confused with a warning. Each role has its own colour and its own dashboard:
+Three brand colours, taken from the dashboard artwork, are used across the site: **royal blue `#15509A`**, **saffron `#B85A00`** and **green `#1D7A45`**, on sky-tinted neutrals (page background `#EEF5FD`). Brighter shades of saffron and green (`#F59F25`, `#4CC26A`) appear only in decorative stripes, never as text; all text colours meet WCAG AA contrast on white. Red appears only for failures and errors, so a failure is never confused with a warning. Each role has its own colour and its own dashboard:
 
 | Role | Colour | Portal name | Dashboard focus |
 |---|---|---|---|
 | Institution Applicant | Green | Institution Portal | My applications, rectification requests with due dates, "What you need to do" |
-| Scrutiny & Verification Officer | Navy | Scrutiny & Verification Desk | Work queues (validation, review, verification), attention list, recent activity |
+| Scrutiny & Verification Officer | Royal blue | Scrutiny & Verification Desk | Work queues (validation, review, verification), attention list, recent activity |
 | Senior Official | Saffron | Competent Authority Desk | Applications awaiting a decision (with the forwarding note), recent decisions |
-| Administrator | Dark navy + saffron | Administration Console | Users, rules, sources, audit volume, configuration changes |
+| Administrator | Dark blue + saffron | Administration Console | Users, rules, sources, audit volume, configuration changes |
 
-The background carries a faint line-art motif of documents, magnifiers and verification shields; dashboards and the sign-in page show a larger version of the same illustration.
+Every signed-in page sits on the project artwork (`public/backgrounds/aegis-backdrop.webp`: a campus, a map of India and a document being checked, with a tricolour wave). Dashboards show it clearly behind a frosted welcome panel; other pages fade it under a light scrim so tables stay readable. The artwork contains no state emblem or seal: the emblem in the source image was replaced with the Aegis shield-and-check mark, because the State Emblem of India may not be used without authorisation and the prototype must not look like an official government product.
 
 ## Quick start
 
@@ -94,7 +94,7 @@ There are **two separate sign-in pages**, and the server only accepts each accou
 | Who | Sign in at | Lands in |
 |---|---|---|
 | Institutions | **http://localhost:3000/institution/login** (green) | the **Institution Portal** (`/portal`) |
-| AICTE officials and administrators | **http://localhost:3000/login** (navy) | the official workspace (Command Centre) |
+| AICTE officials and administrators | **http://localhost:3000/login** (royal blue) | the official workspace (Command Centre) |
 
 A switch at the top of each page links to the other. An institution account used on the official page (or a staff account on the institution page) is refused with a message pointing to the right page, and the attempt is audited.
 

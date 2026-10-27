@@ -15,7 +15,7 @@ import { EmptyState } from "@/components/page-header";
 import { Card, CardHeader } from "@/components/ui/card";
 import { SeverityBadge } from "@/components/status";
 import { ApplicationsTable } from "@/components/app/applications-table";
-import { ValidationIllustration } from "@/components/brand";
+import { DashboardHero, HeroLink } from "@/components/dashboard-hero";
 import { cn, formatDate, formatDateTime, relativeAge } from "@/lib/utils";
 
 export const metadata = { title: "Dashboard" };
@@ -26,28 +26,13 @@ type Extras = Awaited<ReturnType<typeof getRoleExtras>>;
 function Hero({ actor, institution, actions }: { actor: Actor; institution?: string | null; actions: React.ReactNode }) {
   const theme = ROLE_THEME[actor.role];
   return (
-    <section className={cn("relative mb-5 overflow-hidden rounded-xl px-6 py-6 text-white", theme.band)}>
-      <ValidationIllustration className="pointer-events-none absolute -right-2 top-1/2 hidden h-44 -translate-y-1/2 text-white/20 md:block" />
-      <div className="relative max-w-2xl">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-white/75">{theme.portal}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Welcome, {actor.name}</h1>
-        <p className="mt-1 text-sm text-white/85">
-          {ROLE_LABELS[actor.role]}
-          {institution ? ` · ${institution}` : ""} — {theme.purpose}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">{actions}</div>
-      </div>
-      {actor.role === "ADMIN" && <div className="absolute inset-x-0 bottom-0 h-1 bg-saffron" />}
-    </section>
-  );
-}
-
-function HeroLink({ href, icon, children }: { href: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <Link href={href} className="inline-flex h-9 items-center gap-1.5 rounded-md bg-white px-3.5 text-[13px] font-medium text-accent shadow-sm hover:bg-white/90 [&_svg]:size-4">
-      {icon}
-      {children}
-    </Link>
+    <DashboardHero
+      band={theme.band}
+      eyebrow={theme.portal}
+      title={`Welcome, ${actor.name}`}
+      subtitle={<>{ROLE_LABELS[actor.role]}{institution ? ` · ${institution}` : ""} — {theme.purpose}</>}
+      actions={actions}
+    />
   );
 }
 
@@ -162,7 +147,7 @@ function ApplicantDashboard({ actor, d, extras, institution }: { actor: Actor; d
         institution={institution}
         actions={
           <>
-            <HeroLink href="/applications/new" icon={<FilePlus2 />}>New application</HeroLink>
+            <HeroLink primary href="/applications/new" icon={<FilePlus2 />}>New application</HeroLink>
             <HeroLink href="/applications" icon={<Upload />}>Upload documents</HeroLink>
           </>
         }
@@ -210,7 +195,7 @@ function OfficerDashboard({ actor, d }: { actor: Actor; d: Dash }) {
         actor={actor}
         actions={
           <>
-            <HeroLink href="/review" icon={<Inbox />}>Review queue ({m.openFindings})</HeroLink>
+            <HeroLink primary href="/review" icon={<Inbox />}>Review queue ({m.openFindings})</HeroLink>
             <HeroLink href="/applications?status=DRAFT" icon={<Play />}>Awaiting validation</HeroLink>
             <HeroLink href="/verification" icon={<RadioTower />}>Issuer verification</HeroLink>
           </>
@@ -241,7 +226,7 @@ function SeniorDashboard({ actor, d, extras }: { actor: Actor; d: Dash; extras: 
   const decisions = extras.kind === "SENIOR_OFFICIAL" ? extras.decisions : [];
   return (
     <>
-      <Hero actor={actor} actions={<HeroLink href="/applications?status=READY_FOR_AUTHORIZED_REVIEW" icon={<Gavel />}>Applications awaiting your decision ({awaiting.length})</HeroLink>} />
+      <Hero actor={actor} actions={<HeroLink primary href="/applications?status=READY_FOR_AUTHORIZED_REVIEW" icon={<Gavel />}>Applications awaiting your decision ({awaiting.length})</HeroLink>} />
       <Tiles
         tiles={[
           { label: "Awaiting your decision", value: awaiting.length, href: "/applications?status=READY_FOR_AUTHORIZED_REVIEW", icon: <Gavel />, hint: "Forwarded by the scrutiny officer" },
@@ -304,7 +289,7 @@ function AdminDashboard({ actor, d, extras }: { actor: Actor; d: Dash; extras: E
         actor={actor}
         actions={
           <>
-            <HeroLink href="/rules/new" icon={<ListChecks />}>New rule</HeroLink>
+            <HeroLink primary href="/rules/new" icon={<ListChecks />}>New rule</HeroLink>
             <HeroLink href="/admin/users" icon={<Users />}>Manage users</HeroLink>
           </>
         }

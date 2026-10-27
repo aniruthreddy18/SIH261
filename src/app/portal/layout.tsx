@@ -19,6 +19,7 @@ export default async function PortalLayout({ children }: { children: React.React
   ]);
   return (
     <div className="flex min-h-screen flex-col">
+      <div className="app-backdrop" aria-hidden />
       <header className="sticky top-0 z-30 bg-green text-white shadow-sm">
         <div className="tri-rule-on-green h-1" />
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4">

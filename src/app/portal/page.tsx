@@ -3,7 +3,7 @@ import { BadgeCheck, CalendarClock, FileClock, FilePlus2, FileWarning, FolderOpe
 import { listApplications } from "@/server/applications";
 import { prisma } from "@/server/db";
 import { requireActor } from "@/server/session";
-import { ValidationIllustration } from "@/components/brand";
+import { DashboardHero, HeroLink } from "@/components/dashboard-hero";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/page-header";
 import { ApplicationCard } from "@/components/portal/application-card";
@@ -31,18 +31,18 @@ export default async function PortalHome() {
   const actions = rectifications.length + infoRequests.length + needsAction.length;
   return (
     <>
-      <section className="relative mb-5 overflow-hidden rounded-xl bg-green px-6 py-6 text-white">
-        <ValidationIllustration className="pointer-events-none absolute -right-2 top-1/2 hidden h-44 -translate-y-1/2 text-white/20 md:block" />
-        <div className="relative max-w-2xl">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/75">Institution Portal</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Welcome, {actor.name}</h1>
-          <p className="mt-1 text-sm text-white/85">{institution?.name} — submit your documents, see what the checks found, and fix anything flagged.</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link href="/portal/applications/new" className="inline-flex h-9 items-center gap-1.5 rounded-md bg-white px-3.5 text-[13px] font-medium text-green shadow-sm hover:bg-white/90"><FilePlus2 className="size-4" /> New application</Link>
-            <Link href="/portal/help" className="inline-flex h-9 items-center gap-1.5 rounded-md border border-white/40 px-3.5 text-[13px] font-medium text-white hover:bg-white/10"><HelpCircle className="size-4" /> How it works</Link>
-          </div>
-        </div>
-      </section>
+      <DashboardHero
+        band="bg-green"
+        eyebrow="Institution Portal"
+        title={`Welcome, ${actor.name}`}
+        subtitle={<>{institution?.name} — submit your documents, see what the checks found, and fix anything flagged.</>}
+        actions={
+          <>
+            <HeroLink primary href="/portal/applications/new" icon={<FilePlus2 />}>New application</HeroLink>
+            <HeroLink href="/portal/help" icon={<HelpCircle />}>How it works</HeroLink>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {tiles.map(({ label, value, Icon }) => (

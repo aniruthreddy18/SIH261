@@ -27,9 +27,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ]);
   return (
     <div className="flex min-h-screen">
+      <div className="app-backdrop" aria-hidden />
       <Sidebar items={items} reviewCount={reviewCount} role={actor.role} institution={institution?.name} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border border-t-[3px] border-t-accent bg-surface/95 pl-14 pr-4 backdrop-blur lg:pl-6">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border border-t-[3px] border-t-accent bg-white/85 pl-14 pr-4 backdrop-blur lg:pl-6">
           <form action="/applications" className="relative hidden w-full max-w-sm md:block" role="search">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-faint" />
             <input name="q" placeholder="Search applications by ID, institution or code…" aria-label="Search applications" className="h-9 w-full rounded-md border border-border bg-subtle pl-8 pr-3 text-[13px] placeholder:text-faint focus:border-accent focus:bg-surface focus:outline-none" />
