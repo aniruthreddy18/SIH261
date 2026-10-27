@@ -21,8 +21,8 @@ export function PageHeader({ title, description, crumbs = [], actions, meta }: {
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
-          {description && <p className="mt-1 max-w-3xl text-[13px] text-muted">{description}</p>}
+          <h1 className="text-xl font-semibold tracking-tight text-ink [text-shadow:0_1px_8px_rgb(255_255_255/0.9)]">{title}</h1>
+          {description && <p className="mt-1 max-w-3xl text-[13px] text-ink-2 [text-shadow:0_1px_6px_rgb(255_255_255/0.9)]">{description}</p>}
           {meta && <div className="mt-2 flex flex-wrap items-center gap-2">{meta}</div>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

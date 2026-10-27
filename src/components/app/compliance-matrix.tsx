@@ -19,7 +19,7 @@ export function ComplianceMatrix({ matrix, actor }: { matrix: Matrix; actor: Act
         Evaluated against {matrix.lastRun ? `validation run #${matrix.lastRun.runNumber} (${formatDateTime(matrix.lastRun.completedAt)})` : "no completed validation run"} and the latest issuer verification of each current document. This assesses <strong>documentary evidence only</strong>; it does not establish physical infrastructure compliance, which requires inspection.
       </p>
       {matrix.rows.map((r) => (
-        <div key={r.requirement.code} className="rounded-lg border border-border bg-surface">
+        <div key={r.requirement.code} className="glass-card rounded-2xl border">
           <div className="flex flex-wrap items-start gap-2 border-b border-border px-4 py-3">
             <div className="min-w-0 flex-1">
               <p className="text-[13.5px] font-semibold text-ink"><span className="mr-2 font-mono text-[11px] font-normal text-muted">{r.requirement.code}</span>{r.requirement.name}</p>

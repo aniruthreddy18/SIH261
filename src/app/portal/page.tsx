@@ -47,7 +47,7 @@ export default async function PortalHome() {
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {tiles.map(({ label, value, Icon }, i) => (
-          <div key={label} className="glass-card flex items-center gap-3 rounded-xl border px-4 py-3.5">
+          <div key={label} className="glass-card flex items-center gap-3 rounded-2xl border px-4 py-3.5">
             <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br text-white shadow-sm ${TILE_TONES[[3, 1, 2, 0][i % 4]]}`}><Icon className="size-5" /></span>
             <span><span className="block text-2xl font-semibold leading-7 text-ink tabular">{value}</span><span className="block text-xs text-ink-2">{label}</span></span>
           </div>
@@ -98,15 +98,14 @@ export default async function PortalHome() {
         )}
       </Card>
 
-      <div className="mt-6 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-ink">My applications</h2>
-        <Link href="/portal/applications" className="text-xs font-medium text-accent hover:underline">View all</Link>
-      </div>
-      {apps.length === 0 ? (
-        <Card className="mt-3"><EmptyState icon={<FolderOpen />} title="No applications yet" description="Start a new application to upload your documents." action={<Link href="/portal/applications/new" className="text-sm font-medium text-accent hover:underline">New application</Link>} /></Card>
-      ) : (
-        <div className="mt-3 grid gap-3 md:grid-cols-2">{apps.slice(0, 4).map((a) => <ApplicationCard key={a.id} a={a} />)}</div>
-      )}
+      <Card className="mt-4">
+        <CardHeader title="My applications" actions={<Link href="/portal/applications" className="text-xs font-medium text-accent hover:underline">View all</Link>} />
+        {apps.length === 0 ? (
+          <EmptyState icon={<FolderOpen />} title="No applications yet" description="Start a new application to upload your documents." action={<Link href="/portal/applications/new" className="text-sm font-medium text-accent hover:underline">New application</Link>} />
+        ) : (
+          <div className="grid gap-3 p-4 md:grid-cols-2 2xl:grid-cols-3">{apps.slice(0, 6).map((a) => <ApplicationCard key={a.id} a={a} />)}</div>
+        )}
+      </Card>
     </>
   );
 }

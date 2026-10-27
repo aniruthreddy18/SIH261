@@ -132,7 +132,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
 
       <ol className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-label="Workflow progress">
         {steps.map((s, i) => (
-          <li key={s.label} className={cn("flex items-start gap-2.5 rounded-lg border bg-surface px-3 py-2.5", s.done ? "border-ok-line" : "border-border")}>
+          <li key={s.label} className={cn("flex items-start gap-2.5 glass-card rounded-xl border px-3 py-2.5", s.done ? "border-ok-line" : "border-border")}>
             <span className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold", s.done ? "bg-ok text-white" : "border border-border-strong text-muted")}>{s.done ? <Check className="size-3" /> : i + 1}</span>
             <div className="min-w-0">
               <p className="text-[13px] font-medium text-ink">{s.label}</p>
@@ -150,7 +150,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
         {changedSinceRun && status !== "CLOSED" && <Notice tone="warn" title="Evidence changed since the last validation run">Run #{lastRun!.runNumber} did not evaluate the latest document versions. {canValidate ? "Run validation to update the results." : isApplicant && status === "RECTIFICATION_REQUIRED" ? "Submit your rectification on the Rectification tab to trigger revalidation." : ""}</Notice>}
       </div>
 
-      <nav className="glass-card mb-4 flex gap-1 overflow-x-auto rounded-xl border px-2" aria-label="Application sections">
+      <nav className="glass-card mb-4 flex gap-1 overflow-x-auto rounded-2xl border px-2" aria-label="Application sections">
         {tabs.map((t) => (
           <Link
             key={t.key}

@@ -36,7 +36,7 @@ export default async function InstitutionLoginPage({ searchParams }: { searchPar
     <div className="theme-green flex min-h-screen flex-col items-center gap-6 px-4 py-6 lg:flex-row lg:items-center lg:justify-center lg:gap-10 lg:px-10">
       <div className="app-backdrop app-backdrop-vivid" aria-hidden />
       <section className="glass order-2 w-full max-w-md overflow-hidden rounded-xl lg:order-1 lg:max-w-lg">
-        <div className="relative bg-green px-6 pb-4 pt-5 text-white">
+        <div className="glass-bar relative bg-green/75 px-6 pb-4 pt-5 text-white">
           <div className="tri-rule-on-green absolute inset-x-0 top-0 h-1.5" />
           <div className="flex items-center gap-3">
             <BrandMark inverted className="size-9" />

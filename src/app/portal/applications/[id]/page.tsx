@@ -90,7 +90,7 @@ export default async function PortalApplicationPage({ params, searchParams }: { 
         </CardBody>
       </Card>
 
-      <nav className="glass-card mb-4 flex gap-1 overflow-x-auto rounded-xl border px-2" aria-label="Application sections">
+      <nav className="glass-card mb-4 flex gap-1 overflow-x-auto rounded-2xl border px-2" aria-label="Application sections">
         {VIEWS.map((v) => (
           <Link key={v.key} href={`?view=${v.key}`} scroll={false} aria-current={view === v.key ? "page" : undefined} className={cn("my-1.5 flex h-8 shrink-0 items-center rounded-full px-3 text-[13px] font-medium transition-colors", view === v.key ? "bg-accent-soft text-accent shadow-[inset_0_0_0_1px_var(--color-accent-line)]" : "text-ink-2 hover:bg-subtle hover:text-ink")}>
             {v.label}

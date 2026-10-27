@@ -40,7 +40,7 @@ function Tiles({ tiles }: { tiles: { label: string; value: number | string; href
   return (
     <div className={cn("grid grid-cols-2 gap-3", tiles.length >= 5 ? "md:grid-cols-3 xl:grid-cols-5" : "md:grid-cols-4")}>
       {tiles.map((t, i) => (
-        <Link key={t.label} href={t.href} title={t.hint} className="glass-card group flex items-center gap-3 rounded-xl border px-4 py-3.5 transition hover:-translate-y-0.5 hover:shadow-md">
+        <Link key={t.label} href={t.href} title={t.hint} className="glass-card group flex items-center gap-3 rounded-2xl border px-4 py-3.5 transition hover:-translate-y-0.5 hover:shadow-md">
           <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br text-white shadow-sm [&_svg]:size-5", TILE_TONES[i % TILE_TONES.length])}>{t.icon}</span>
           <span className="min-w-0">
             <span className="block text-2xl font-semibold leading-7 text-ink tabular">{t.value}</span>

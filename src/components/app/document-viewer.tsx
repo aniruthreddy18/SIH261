@@ -42,7 +42,7 @@ export function DocumentViewer({ versionId, pageCount, fields, initialPage, canC
   };
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <div className="rounded-lg border border-border bg-surface">
+      <div className="glass-card rounded-2xl border">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <p className="text-xs font-medium text-ink-2">Source preview {isImage ? "(image)" : "(rendered server-side)"}</p>
           <div className="flex items-center gap-1 text-xs">
@@ -68,7 +68,7 @@ export function DocumentViewer({ versionId, pageCount, fields, initialPage, canC
           <p className="mt-2 text-center text-[11px] text-muted">Highlighted regions show where each extracted value was found. Select a field to locate it.</p>
         </div>
       </div>
-      <div className="rounded-lg border border-border bg-surface">
+      <div className="glass-card rounded-2xl border">
         <div className="border-b border-border px-4 py-2.5">
           <p className="text-sm font-semibold text-ink">Extracted fields</p>
           <p className="text-xs text-muted">Unknown values are shown as unknown — never guessed. Corrections are audited and do not overwrite the machine value.</p>

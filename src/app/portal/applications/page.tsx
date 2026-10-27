@@ -23,7 +23,7 @@ export default async function PortalApplications() {
       {apps.length === 0 ? (
         <Card><EmptyState icon={<FolderOpen />} title="No applications yet" /></Card>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">{apps.map((a) => <ApplicationCard key={a.id} a={a} />)}</div>
+        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">{apps.map((a) => <ApplicationCard key={a.id} a={a} />)}</div>
       )}
     </>
   );

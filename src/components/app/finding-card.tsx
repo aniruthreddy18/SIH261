@@ -64,7 +64,7 @@ export function FindingCard({ f, actor, showLink = true }: { f: FindingView; act
   const active = ACTIVE_FINDING_STATUSES.includes(f.status as FindingStatus);
   const isApplicant = actor.role === "APPLICANT";
   return (
-    <div className="rounded-lg border border-border bg-surface">
+    <div className="glass-card rounded-2xl border">
       <div className="flex flex-wrap items-start gap-2 border-b border-border px-4 py-3">
         <div className="min-w-0 flex-1">
           <p className="text-[13.5px] font-semibold text-ink">{f.title}</p>

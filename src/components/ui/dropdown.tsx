@@ -9,7 +9,7 @@ export const DropdownTrigger = M.Trigger;
 export function DropdownContent({ className, children, align = "end" }: { className?: string; children: React.ReactNode; align?: "start" | "end" }) {
   return (
     <M.Portal>
-      <M.Content align={align} sideOffset={6} className={cn("z-50 min-w-[200px] rounded-md border border-border bg-surface p-1 shadow-lg", className)}>
+      <M.Content align={align} sideOffset={6} className={cn("z-50 min-w-[200px] glass-strong rounded-xl border p-1", className)}>
         {children}
       </M.Content>
     </M.Portal>

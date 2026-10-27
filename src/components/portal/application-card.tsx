@@ -41,7 +41,7 @@ export function StepTracker({ status, compact = false }: { status: ApplicationSt
 export function ApplicationCard({ a }: { a: PortalAppRow }) {
   const g = APPLICANT_GUIDANCE[a.status];
   return (
-    <Link href={`/portal/applications/${a.id}`} className="block rounded-lg border border-border bg-surface p-4 transition-colors hover:border-accent-line">
+    <Link href={`/portal/applications/${a.id}`} className="glass-card block rounded-2xl border p-4 transition-colors hover:border-accent-line">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-mono text-xs text-muted">{a.reference}</p>
