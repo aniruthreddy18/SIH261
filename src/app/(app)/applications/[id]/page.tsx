@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Check, Download, Forward, Gavel, Play, RadioTower } from "lucide-react";
 import { hasPermission, NotFoundError } from "@/lib/auth/permissions";
-import { APPLICATION_STATUS_DESCRIPTIONS, DECISION_SUPPORT_DISCLAIMER, type ApplicationStatus } from "@/lib/domain";
+import { APPLICATION_STATUS_DESCRIPTIONS, DECISION_SUPPORT_DISCLAIMER, VERIFICATION_STATUS_LABELS, type ApplicationStatus } from "@/lib/domain";
 import { DECISION_OUTCOMES } from "@/lib/findings";
 import { getApplicationDetail } from "@/server/applications";
 import { verificationCoverage } from "@/server/verification";
@@ -59,6 +59,17 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
   const canValidate = hasPermission(actor.role, "validation.run") && !["PROCESSING", "READY_FOR_AUTHORIZED_REVIEW", "CLOSED"].includes(status) && !(isApplicant && status === "RECTIFICATION_REQUIRED");
   const canVerify = hasPermission(actor.role, "verification.run") && !["PROCESSING", "CLOSED"].includes(status);
   const canForward = hasPermission(actor.role, "application.forward") && ["AUTO_PASSED", "REVIEW_REQUIRED"].includes(status);
+  // The same conditions the server enforces in forwardForAuthorizedReview, shown up front with the fix for each.
+  const unverified = coverage.filter((c) => !c.covered);
+  const forwardBlockers: { text: string; href: string; action: string }[] = [
+    ...(openFindings.length ? [{ text: `${openFindings.length} finding(s) still open.`, href: `/applications/${app.id}?tab=findings`, action: "Review findings" }] : []),
+    ...unverified.map((c) => ({
+      text: `${c.categoryName}: issuer verification ${c.latestStatus ? `result is “${VERIFICATION_STATUS_LABELS[c.latestStatus]}”` : "has not been run"}. ${c.latestStatus === "MISMATCH_DETECTED" ? "Confirm with the issuer and record a manual confirmation, or return for rectification." : "Run verification, or record a manual confirmation."}`,
+      href: `/applications/${app.id}?tab=verification`,
+      action: "Open issuer verification",
+    })),
+    ...(changedSinceRun ? [{ text: "Evidence changed since the last validation run.", href: `/applications/${app.id}?tab=validation`, action: "Run validation first" }] : []),
+  ];
   const canDecide = hasPermission(actor.role, "application.decide") && status === "READY_FOR_AUTHORIZED_REVIEW";
 
   const steps = [
@@ -102,6 +113,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
               <ActionDialog
                 label="Forward for authorised review"
                 icon={<Forward />}
+                disabled={forwardBlockers.length > 0}
                 title="Forward for authorised review"
                 description="Requires: no open findings, issuer verification complete for every verifiable document, and no evidence changed since the last validation run. The server re-checks all of these."
                 fields={[{ name: "reason", label: "Scrutiny note / reason", type: "textarea", minLength: 10 }]}
@@ -147,6 +159,21 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
           <span className="font-medium">{APPLICATION_STATUS_DESCRIPTIONS[status]}</span>
           {status === "AUTO_PASSED" && " Automated results support — but do not replace — authorised review."}
         </Notice>
+        {canForward && forwardBlockers.length > 0 && (
+          <Notice tone="warn" title="Before this application can be forwarded">
+            <ul className="mt-1 space-y-1">
+              {forwardBlockers.map((b, i) => (
+                <li key={i} className="flex flex-wrap items-baseline gap-x-2">
+                  <span>• {b.text}</span>
+                  <Link href={b.href} scroll={false} className="font-medium underline underline-offset-2">{b.action}</Link>
+                </li>
+              ))}
+            </ul>
+          </Notice>
+        )}
+        {canForward && forwardBlockers.length === 0 && (
+          <Notice tone="ok" title="Ready to forward">No open findings, issuer verification complete for all {coverage.length} verifiable document(s), and validation is up to date. Use “Forward for authorised review”.</Notice>
+        )}
         {changedSinceRun && status !== "CLOSED" && <Notice tone="warn" title="Evidence changed since the last validation run">Run #{lastRun!.runNumber} did not evaluate the latest document versions. {canValidate ? "Run validation to update the results." : isApplicant && status === "RECTIFICATION_REQUIRED" ? "Submit your rectification on the Rectification tab to trigger revalidation." : ""}</Notice>}
       </div>
 

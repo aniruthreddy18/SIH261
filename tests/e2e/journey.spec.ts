@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient({ datasourceUrl: "file:./e2e.db" });
@@ -18,6 +18,19 @@ async function signIn(page: Page, email: string) {
 
 async function appId(name: string) {
   return (await db.application.findFirstOrThrow({ where: { institutionName: { contains: name } } })).id;
+}
+
+/**
+ * Click a button that opens a dialog and wait until the dialog is open. Retries the click if it
+ * landed before the page finished hydrating (a click on server-rendered HTML does nothing yet).
+ */
+async function openDialog(page: Page, trigger: Locator): Promise<Locator> {
+  const dialog = page.getByRole("dialog");
+  await expect(async () => {
+    if (!(await dialog.isVisible())) await trigger.click({ timeout: 5_000 });
+    await expect(dialog).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  return dialog;
 }
 
 async function expectToast(page: Page, text: string | RegExp) {
@@ -105,14 +118,14 @@ test("full journey: findings → rectification → revalidation → verification
   await signIn(page, "applicant.meridian@pravah.demo");
   await expect(page.getByText("Correction requested").first()).toBeVisible();
   await page.goto(`/portal/applications/${id}`);
-  await page.getByRole("button", { name: "Upload replacement" }).first().click();
+  await openDialog(page, page.getByRole("button", { name: "Upload replacement" }).first());
   const dialog = page.getByRole("dialog");
   await dialog.getByTestId("upload-input").setInputFiles(sample("meridian-fire-noc-renewed.pdf"));
   await dialog.locator("#replace-reason").fill("Renewed fire NOC issued in October 2026");
   await dialog.getByTestId("upload-submit").click();
   await expect(dialog.getByText("Uploaded and processed")).toBeVisible({ timeout: 90_000 });
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Submit corrections and revalidate" }).click();
+  await openDialog(page, page.getByRole("button", { name: "Submit corrections and revalidate" }));
   await page.getByRole("dialog").locator("textarea").fill("Renewed NOC uploaded as requested.");
   await page.getByRole("dialog").getByRole("button", { name: "Submit corrections and revalidate" }).click();
   await expectToast(page, "Corrections submitted");
@@ -132,7 +145,7 @@ test("full journey: findings → rectification → revalidation → verification
   // 4. Scrutiny officer forwards for authorised review.
   await signIn(page, "scrutiny@pravah.demo");
   await page.goto(`/applications/${id}`);
-  await page.getByRole("button", { name: "Forward for authorised review" }).click();
+  await openDialog(page, page.getByRole("button", { name: "Forward for authorised review" }));
   await page.getByRole("dialog").locator("textarea").fill("All checks pass after rectification; NOC verified with simulated issuer.");
   await page.getByRole("dialog").getByRole("button", { name: "Forward for authorised review" }).click();
   await expectToast(page, "Forwarded for authorised review");
@@ -140,7 +153,7 @@ test("full journey: findings → rectification → revalidation → verification
   // 5. Senior official records a human review outcome with reason and reference.
   await signIn(page, "senior@pravah.demo");
   await page.goto(`/applications/${id}`);
-  await page.getByRole("button", { name: "Record review outcome" }).click();
+  await openDialog(page, page.getByRole("button", { name: "Record review outcome" }));
   const d = page.getByRole("dialog");
   await d.locator("select").selectOption("SATISFACTORY_FOR_FURTHER_PROCESSING");
   await d.locator("textarea").fill("Scrutiny satisfactory on documentary evidence; forward for statutory processing.");
@@ -162,11 +175,122 @@ test("full journey: findings → rectification → revalidation → verification
   expect((await report.body()).subarray(0, 5).toString()).toBe("%PDF-");
 });
 
+test("upload to closing: an institution completes its draft and it is checked, verified, forwarded and decided", async ({ page }) => {
+  const id = await appId("Greenfield");
+  const status = async () => (await db.application.findUniqueOrThrow({ where: { id } })).status;
+  expect(await status()).toBe("DRAFT");
+
+  // 1. The institution uploads the two missing mandatory documents and runs the checks.
+  await signIn(page, "applicant.greenfield@pravah.demo");
+  for (const [slot, file] of [["Faculty strength statement", "greenfield-faculty-statement.pdf"], ["Built-up area / infrastructure evidence", "greenfield-built-up-area.pdf"]]) {
+    await page.goto(`/portal/applications/${id}?view=documents`);
+    await openDialog(page, page.locator("li").filter({ hasText: slot }).first().getByRole("button", { name: "Upload" }));
+    const dialog = page.getByRole("dialog");
+    await dialog.getByTestId("upload-input").setInputFiles(sample(file));
+    await dialog.getByTestId("upload-submit").click();
+    await expect(dialog.getByText("Uploaded and processed")).toBeVisible({ timeout: 90_000 });
+  }
+  await page.goto(`/portal/applications/${id}`);
+  await page.getByRole("button", { name: "Run checks" }).click();
+  await expect.poll(status, { timeout: 60_000 }).toBe("AUTO_PASSED");
+
+  // 2. The officer sees exactly what blocks forwarding, runs issuer verification, then forwards.
+  await signIn(page, "scrutiny@pravah.demo");
+  await page.goto(`/applications/${id}`);
+  await expect(page.getByText("Before this application can be forwarded")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Forward for authorised review" })).toBeDisabled();
+  await page.getByRole("button", { name: "Run issuer verification" }).click();
+  await expectToast(page, "Verification attempted");
+  await page.goto(`/applications/${id}`);
+  await expect(page.getByText("Ready to forward")).toBeVisible();
+  await openDialog(page, page.getByRole("button", { name: "Forward for authorised review" }));
+  await page.getByRole("dialog").locator("textarea").fill("All automated checks passed and every verifiable document was verified.");
+  await page.getByRole("dialog").getByRole("button", { name: "Forward for authorised review" }).click();
+  await expectToast(page, "Forwarded for authorised review");
+  expect(await status()).toBe("READY_FOR_AUTHORIZED_REVIEW");
+
+  // 3. The senior official records the outcome; the application closes and the institution sees it.
+  await signIn(page, "senior@pravah.demo");
+  await page.goto(`/applications/${id}`);
+  await openDialog(page, page.getByRole("button", { name: "Record review outcome" }));
+  const d = page.getByRole("dialog");
+  await d.locator("select").selectOption("SATISFACTORY_FOR_FURTHER_PROCESSING");
+  await d.locator("textarea").fill("Documentary scrutiny satisfactory; proceed to statutory processing.");
+  await d.locator("input[name=reference]").fill("PRV/SO/2026/201");
+  await d.getByRole("button", { name: "Record outcome" }).click();
+  await expectToast(page, "Human review outcome recorded");
+  expect(await status()).toBe("CLOSED");
+  await signIn(page, "applicant.greenfield@pravah.demo");
+  await page.goto(`/portal/applications/${id}`);
+  await expect(page.getByTestId("app-status")).toContainText(/closed|outcome/i);
+});
+
+test("issuer mismatch: resolving the finding is not enough; a manual confirmation unblocks forwarding", async ({ page }) => {
+  const id = await appId("Northfield");
+  const status = async () => (await db.application.findUniqueOrThrow({ where: { id } })).status;
+
+  // 1. The officer resolves the open mismatch finding and revalidates.
+  await signIn(page, "scrutiny@pravah.demo");
+  await page.goto(`/applications/${id}?tab=findings`);
+  await openDialog(page, page.getByRole("button", { name: "Resolve" }).first());
+  await page.getByRole("dialog").locator("textarea").fill("Reviewed against the submitted certificate; to be confirmed with the registry.");
+  await page.getByRole("dialog").getByRole("button", { name: "Resolve" }).click();
+  await expectToast(page, /resolved|recorded/i);
+  await page.goto(`/applications/${id}`);
+  await page.getByRole("button", { name: "Run validation" }).first().click();
+  await expect.poll(status, { timeout: 60_000 }).toBe("AUTO_PASSED");
+
+  // 2. Forwarding stays blocked, and the page says why and where to fix it.
+  await page.goto(`/applications/${id}`);
+  await expect(page.getByText("Accreditation / Certification: issuer verification result is “Mismatch detected”")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Forward for authorised review" })).toBeDisabled();
+
+  // 3. A manual confirmation with a reference clears it.
+  await page.getByRole("link", { name: "Open issuer verification" }).first().click();
+  const acc = page.locator("div").filter({ has: page.getByRole("heading", { name: /^Accreditation \/ Certification/ }) }).filter({ has: page.getByRole("button", { name: "Manual confirmation" }) }).last();
+  await openDialog(page, acc.getByRole("button", { name: "Manual confirmation" }));
+  const m = page.getByRole("dialog");
+  await m.locator("select").selectOption("VERIFIED");
+  await m.locator("input[name=reference]").fill("DNAR/EMAIL/2026/77");
+  await m.locator("textarea").fill("Confirmed with the accreditation registry by official email.");
+  await m.getByRole("button").filter({ hasText: /record|confirm|save|submit/i }).last().click();
+  await expectToast(page, /manual/i);
+
+  // 4. Now it forwards and closes.
+  await page.goto(`/applications/${id}`);
+  await expect(page.getByText("Ready to forward")).toBeVisible();
+  await openDialog(page, page.getByRole("button", { name: "Forward for authorised review" }));
+  await page.getByRole("dialog").locator("textarea").fill("Mismatch reviewed and accreditation confirmed manually with the registry.");
+  await page.getByRole("dialog").getByRole("button", { name: "Forward for authorised review" }).click();
+  await expectToast(page, "Forwarded for authorised review");
+  await signIn(page, "senior@pravah.demo");
+  await page.goto(`/applications/${id}`);
+  await openDialog(page, page.getByRole("button", { name: "Record review outcome" }));
+  const d = page.getByRole("dialog");
+  await d.locator("select").selectOption("SATISFACTORY_FOR_FURTHER_PROCESSING");
+  await d.locator("textarea").fill("Satisfactory on documentary evidence after manual confirmation of accreditation.");
+  await d.locator("input[name=reference]").fill("PRV/SO/2026/202");
+  await d.getByRole("button", { name: "Record outcome" }).click();
+  await expectToast(page, "Human review outcome recorded");
+  expect(await status()).toBe("CLOSED");
+});
+
 test("local AI suggests fields from a prose certificate; rules wait for an officer to confirm them", async ({ page }) => {
   test.skip(!fs.existsSync(path.resolve(__dirname, "../../models/bert-squad/bertsquad-12-int8.onnx")), "Local AI model not installed (run npm run ai:setup)");
   // Loads the ONNX model and compiles several pages on a cold dev server: allow extra time.
   test.setTimeout(300_000);
-  const id = await appId("Greenfield");
+  // 1. The institution starts a new application and uploads a certificate written as prose
+  //    (no "Label: value" lines).
+  await signIn(page, "applicant.greenfield@pravah.demo");
+  await page.goto("/portal/applications/new");
+  await Promise.all([page.waitForURL(/\/portal\/applications\/(?!new)[^/?]+/), page.getByRole("button", { name: "Create application" }).click()]);
+  const id = new URL(page.url()).pathname.split("/").pop()!;
+  await page.goto(`/portal/applications/${id}?view=documents`);
+  await openDialog(page, page.locator("li").filter({ hasText: "Fire & building safety NOC" }).first().getByRole("button", { name: "Upload" }));
+  const dialog = page.getByRole("dialog");
+  await dialog.getByTestId("upload-input").setInputFiles(sample("ai-demo-noc-prose.pdf"));
+  await dialog.getByTestId("upload-submit").click();
+  await expect(dialog.getByText("Uploaded and processed")).toBeVisible({ timeout: 120_000 });
   const noc = await db.document.findFirstOrThrow({ where: { applicationId: id, categoryCode: "NOC_PERMISSION", state: "ACTIVE" } });
   const validityResult = async () => {
     const run = await db.validationRun.findFirstOrThrow({ where: { applicationId: id }, orderBy: { runNumber: "desc" }, include: { results: true } });
@@ -180,16 +304,6 @@ test("local AI suggests fields from a prose certificate; rules wait for an offic
     await expect.poll(latestRun, { timeout: 60_000 }).toBeGreaterThan(before);
   };
 
-  // 1. The institution uploads a certificate written as prose (no "Label: value" lines).
-  await signIn(page, "applicant.greenfield@pravah.demo");
-  await page.goto(`/portal/applications/${id}?view=documents`);
-  await page.locator("li").filter({ hasText: "Fire & building safety NOC" }).first().getByRole("button", { name: "Replace" }).click();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByTestId("upload-input").setInputFiles(sample("ai-demo-noc-prose.pdf"));
-  await dialog.locator("#replace-reason").fill("Fire clearance issued in prose format");
-  await dialog.getByTestId("upload-submit").click();
-  await expect(dialog.getByText("Uploaded and processed")).toBeVisible({ timeout: 120_000 });
-
   // 2. The officer sees the AI suggestions; validation routes them to review instead of deciding.
   await signIn(page, "scrutiny@pravah.demo");
   await page.goto(`/documents/${noc.id}`);
@@ -202,7 +316,7 @@ test("local AI suggests fields from a prose certificate; rules wait for an offic
 
   // 3. After the officer confirms the value, the rule decides on it.
   await page.goto(`/documents/${noc.id}`);
-  await expiry.getByRole("button", { name: "Confirm AI suggestion" }).click();
+  await openDialog(page, expiry.getByRole("button", { name: "Confirm AI suggestion" }));
   await page.getByRole("dialog").getByRole("button", { name: "Confirm AI suggestion" }).click();
   await expectToast(page, "AI suggestion confirmed");
   await runValidation();

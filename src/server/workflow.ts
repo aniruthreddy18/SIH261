@@ -2,7 +2,7 @@
 // authorised review, and recorded human review outcomes. Every action requires a reason and
 // produces a ReviewAction and an audit event.
 import { assertPermission, DomainError, type Actor } from "@/lib/auth/permissions";
-import { ACTIVE_FINDING_STATUSES, type ApplicationStatus } from "@/lib/domain";
+import { ACTIVE_FINDING_STATUSES, type ApplicationStatus, VERIFICATION_STATUS_LABELS } from "@/lib/domain";
 import { DECISION_OUTCOMES, type DecisionOutcome } from "@/lib/findings";
 import { prisma } from "./db";
 import { recordAudit } from "./audit";
@@ -70,7 +70,10 @@ export async function forwardForAuthorizedReview(actor: Actor, applicationId: st
   if (open > 0) throw new DomainError(`${open} finding(s) are still open. Resolve, dismiss or return them for rectification first.`);
   const coverage = await verificationCoverage(applicationId);
   const missing = coverage.filter((c) => !c.covered);
-  if (missing.length) throw new DomainError(`Issuer verification is incomplete for: ${missing.map((m) => m.categoryName).join(", ")}. Run verification or record a manual confirmation.`);
+  if (missing.length) {
+    const detail = missing.map((m) => `${m.categoryName} (${m.latestStatus ? VERIFICATION_STATUS_LABELS[m.latestStatus].toLowerCase() : "not run yet"})`).join(", ");
+    throw new DomainError(`Issuer verification is incomplete for: ${detail}. Resolving a finding does not verify a document: on the Issuer verification tab, run verification again or record a manual confirmation with a reference — or return the application for rectification.`);
+  }
   const lastRun = await prisma.validationRun.findFirst({ where: { applicationId, status: "COMPLETED" }, orderBy: { runNumber: "desc" } });
   const changedSince = lastRun ? await prisma.documentVersion.count({ where: { document: { applicationId, state: "ACTIVE" }, isCurrent: true, uploadedAt: { gt: lastRun.startedAt } } }) : 1;
   if (changedSince > 0) throw new DomainError("Evidence has changed since the last validation run. Rerun validation before forwarding.");
