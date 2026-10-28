@@ -47,7 +47,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
             <form action="/applications" className="relative ml-4 hidden w-full max-w-sm md:block" role="search">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-white/75" />
-              <input name="q" placeholder="Search applications by ID, institution or code…" aria-label="Search applications" className="h-9 w-full rounded-full border border-white/25 bg-white/15 pl-8 pr-3 text-[13px] text-white placeholder:text-white/75 focus:border-accent-line focus:bg-navy-deep/90 focus:placeholder:text-faint focus:outline-none" />
+              <input name="q" placeholder="Search applications by ID, institution or code…" aria-label="Search applications" className="h-9 w-full rounded-full border border-white/25 bg-white/15 pl-8 pr-3 text-[13px] text-white placeholder:text-white/75 focus:border-white focus:bg-white focus:text-ink focus:placeholder:text-faint focus:outline-none" />
             </form>
             <div className="glass-strong ml-auto flex items-center gap-1 rounded-xl border px-1 text-ink">
               <NotificationBell unread={unread} items={notifications.map((n) => ({ id: n.id, title: n.title, body: n.body, link: n.link, severity: n.severity, readAt: n.readAt?.toISOString() ?? null, createdAt: n.createdAt.toISOString() }))} />
@@ -56,7 +56,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
           {actor.role === "ADMIN" && <div className="h-0.5 bg-saffron-bright" />}
         </div>
-        <div className="glass-bar border-b border-white/10 bg-navy-deep/55 shadow-[0_8px_24px_-18px_rgb(13_35_64/0.35)]">
+        <div className="glass-bar border-b border-white/45 bg-white/32 shadow-[0_8px_24px_-18px_rgb(13_35_64/0.35)]">
           <div className="w-full px-4 sm:px-6 lg:px-8">
             <TopNav items={items} reviewCount={reviewCount} />
           </div>

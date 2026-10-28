@@ -47,18 +47,16 @@ Workflow: **Application → Documents → Validation → Verification → Review
 
 ### Look and feel
 
-**Pravah AI** ("pravah" = flow: evidence flowing through checks to a decision) uses a dark **night theme** taken from the banner artwork (`public/backgrounds/pravah-backdrop.webp`: a lit campus, a glowing network map of India, the Delhi skyline and a tricolour wave). The palette is night navy (`#061A33`), electric blue (`#4DA3FF`), campus-light gold (`#F6B54A`) and the tricolour saffron and green. Red appears only for failures and errors, so a failure is never confused with a warning.
-
-Every colour has two tones, both checked against WCAG AA (≥ 4.5:1): a **light tone** for text and icons on the dark glass (e.g. `#7CB8FF`), and a **deep fill** for buttons and pills that carry white text (e.g. `#2459D6`). Each role has its own colour and its own dashboard:
+Three brand colours, taken from the dashboard artwork, are used across the site: **royal blue `#15509A`**, **saffron `#B85A00`** and **green `#1D7A45`**, on sky-tinted neutrals (page background `#EEF5FD`). Brighter shades of saffron and green (`#F59F25`, `#4CC26A`) appear only in decorative stripes, never as text; all text colours meet WCAG AA contrast on white. Red appears only for failures and errors, so a failure is never confused with a warning. Each role has its own colour and its own dashboard:
 
 | Role | Colour | Portal name | Dashboard focus |
 |---|---|---|---|
-| Institution Applicant | Emerald | Institution Portal | My applications, rectification requests with due dates, "What you need to do" |
-| Scrutiny & Verification Officer | Electric blue | Scrutiny & Verification Desk | Work queues (validation, review, verification), attention list, recent activity |
-| Senior Official | Gold / amber | Competent Authority Desk | Applications awaiting a decision (with the forwarding note), recent decisions |
-| Administrator | Cyan | Administration Console | Users, rules, sources, audit volume, configuration changes |
+| Institution Applicant | Green | Institution Portal | My applications, rectification requests with due dates, "What you need to do" |
+| Scrutiny & Verification Officer | Royal blue | Scrutiny & Verification Desk | Work queues (validation, review, verification), attention list, recent activity |
+| Senior Official | Saffron | Competent Authority Desk | Applications awaiting a decision (with the forwarding note), recent decisions |
+| Administrator | Dark blue + saffron | Administration Console | Users, rules, sources, audit volume, configuration changes |
 
-Navigation is a horizontal top bar: a header that flows from night navy into the role's glow colour (logo, search, notifications, account), above a frosted row of section links; the active section is a filled pill. Cards, panels, menus and dialogs are dark frosted glass (navy-tinted fill, heavy blur, cool hairline edge), so the artwork stays visible on every page, including both sign-in pages. Statistic tiles use vivid gradient icons. The logo mark is two flowing waves carrying a gold check mark. The artwork contains no state emblem or seal, because the State Emblem of India may not be used without authorisation and the prototype must not look like an official government product.
+Navigation is a horizontal top bar: a gradient header in the role's colour (brand, search, notifications, account) above a frosted row of section links; the active section is a filled pill. Statistic tiles use colour-gradient icons (blue, saffron, teal, green). Every page, including both sign-in pages, sits on the project artwork (`public/backgrounds/pravah-backdrop.webp`: a campus, a map of India and a document being checked, with a tricolour wave). Pages use the full screen width. Cards, panels, menus and both header rows are translucent frosted glass in the style of macOS/iOS materials (light white fill, heavy blur with a gentle saturation boost, bright hairline edge), so the artwork stays visible everywhere while text keeps its contrast. The artwork contains no state emblem or seal: the emblem in the source image was replaced with a neutral shield-and-check mark, because the State Emblem of India may not be used without authorisation and the prototype must not look like an official government product.
 
 ## Quick start
 
@@ -100,7 +98,7 @@ There are **two separate sign-in pages**, and the server only accepts each accou
 | Who | Sign in at | Lands in |
 |---|---|---|
 | Institutions | **http://localhost:3000/institution/login** (green) | the **Institution Portal** (`/portal`) |
-| AICTE officials and administrators | **http://localhost:3000/login** (electric blue) | the official workspace (Command Centre) |
+| AICTE officials and administrators | **http://localhost:3000/login** (royal blue) | the official workspace (Command Centre) |
 
 A switch at the top of each page links to the other. An institution account used on the official page (or a staff account on the institution page) is refused with a message pointing to the right page, and the attempt is audited.
 

@@ -28,7 +28,6 @@ function Hero({ actor, institution, actions }: { actor: Actor; institution?: str
   return (
     <DashboardHero
       band={theme.header}
-      dot={theme.dot}
       eyebrow={theme.portal}
       title={`Welcome, ${actor.name}`}
       subtitle={<>{ROLE_LABELS[actor.role]}{institution ? ` · ${institution}` : ""} — {theme.purpose}</>}

@@ -2,9 +2,9 @@
 
 Preparation: `npm run db:reset && npm run dev` and open http://localhost:3000. Password for all accounts: `Pravah@Demo2026`. Keep the `samples/` folder open.
 
-**0:00 — Framing (20 s).** Sign in as `scrutiny@pravah.demo`. Point to the electric-blue *Scrutiny & Verification Desk* header (each role has its own colour) over the night artwork, the *Demo environment* label and the disclaimer: decision support, not an approval engine. All data is synthetic, and issuer sources are simulated and labelled.
+**0:00 — Framing (20 s).** Sign in as `scrutiny@pravah.demo`. Point to the royal-blue *Scrutiny & Verification Desk* band (each role has its own colour) over the project artwork, the *Demo environment* label and the disclaimer: decision support, not an approval engine. All data is synthetic, and issuer sources are simulated and labelled.
 
-**0:20 — Command Centre (30 s).** Five live tiles computed from the database and "Attention required" sorted by severity. (Each role gets its own dashboard: emerald Institution Portal, electric-blue officer desk, gold Competent Authority Desk, cyan Administration Console.) Click the **Meridian** expired-certificate item.
+**0:20 — Command Centre (30 s).** Five live tiles computed from the database and "Attention required" sorted by severity. (Each role gets its own dashboard: green Institution Portal, royal-blue officer desk, saffron Competent Authority Desk, dark-blue Administration Console.) Click the **Meridian** expired-certificate item.
 
 **0:50 — Demo A: automatic validation with evidence (50 s).** Open **Findings**: *"Validity does not cover the required date: valid until 31 Mar 2027, must remain valid on 01 Jul 2027 (start of AY 2027-28)"*, with rule `DATE-VAL-001 v2`, the page reference and the source excerpt. Click the document link: the server-rendered page with the **highlighted extraction region**. Show the confidence values and the "Correct value" action (machine value retained, correction audited). Note the rule is a *sample* rule with two immutable versions (Validation Rules).
 

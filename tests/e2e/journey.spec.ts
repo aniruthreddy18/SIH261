@@ -164,6 +164,8 @@ test("full journey: findings → rectification → revalidation → verification
 
 test("local AI suggests fields from a prose certificate; rules wait for an officer to confirm them", async ({ page }) => {
   test.skip(!fs.existsSync(path.resolve(__dirname, "../../models/bert-squad/bertsquad-12-int8.onnx")), "Local AI model not installed (run npm run ai:setup)");
+  // Loads the ONNX model and compiles several pages on a cold dev server: allow extra time.
+  test.setTimeout(300_000);
   const id = await appId("Greenfield");
   const noc = await db.document.findFirstOrThrow({ where: { applicationId: id, categoryCode: "NOC_PERMISSION", state: "ACTIVE" } });
   const validityResult = async () => {

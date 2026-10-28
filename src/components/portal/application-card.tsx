@@ -26,11 +26,11 @@ export function StepTracker({ status, compact = false }: { status: ApplicationSt
         const here = n === current && status !== "CLOSED";
         return (
           <li key={label} className="flex min-w-0 flex-1 items-center gap-1">
-            <span className={cn("flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold", done ? "bg-green text-white" : here ? "border-2 border-green-bright text-green-bright" : "border border-border-strong text-faint")}>
+            <span className={cn("flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold", done ? "bg-green text-white" : here ? "border-2 border-green text-green" : "border border-border-strong text-faint")}>
               {done ? <Check className="size-3" /> : n}
             </span>
             {!compact && <span className={cn("hidden truncate text-[11px] sm:inline", here ? "font-semibold text-ink" : done ? "text-ink-2" : "text-faint")}>{label}</span>}
-            {n < PORTAL_STEPS.length && <span className={cn("h-px min-w-2 flex-1", done ? "bg-green-bright" : "bg-border")} />}
+            {n < PORTAL_STEPS.length && <span className={cn("h-px min-w-2 flex-1", done ? "bg-green" : "bg-border")} />}
           </li>
         );
       })}

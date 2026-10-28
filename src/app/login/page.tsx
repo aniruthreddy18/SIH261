@@ -23,7 +23,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <div className="flex min-h-screen flex-col items-center gap-6 px-4 py-6 lg:flex-row lg:items-center lg:justify-center lg:gap-10 lg:px-10">
       <div className="app-backdrop app-backdrop-vivid" aria-hidden />
       <section className="glass order-2 w-full max-w-md overflow-hidden rounded-xl lg:order-1 lg:max-w-lg">
-        <div className="glass-bar hdr-officer relative px-6 pb-4 pt-5 text-white">
+        <div className="glass-bar relative bg-navy/75 px-6 pb-4 pt-5 text-white">
           <div className="tri-rule-on-navy absolute inset-x-0 top-0 h-1.5" />
           <div className="flex items-center gap-3">
             <BrandMark inverted className="size-9" />
@@ -52,7 +52,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <div className="glass order-1 w-full max-w-md rounded-xl p-5 sm:p-6 lg:order-2">
         <PortalSwitch current="OFFICIAL" />
         <h2 className="mt-6 text-lg font-semibold text-ink">AICTE official sign-in</h2>
-        <p className="mt-1 text-xs text-muted">For scrutiny &amp; verification officers, competent authorities and administrators. Institutions use the <a href="/institution/login" className="font-medium text-green-bright underline">Institution login</a>.</p>
+        <p className="mt-1 text-xs text-muted">For scrutiny &amp; verification officers, competent authorities and administrators. Institutions use the <a href="/institution/login" className="font-medium text-green underline">Institution login</a>.</p>
         <LoginForm next={next ?? "/"} portal="OFFICIAL" />
         {demo && (
           <div className="mt-8 rounded-lg border border-border bg-surface">

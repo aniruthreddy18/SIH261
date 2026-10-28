@@ -100,7 +100,7 @@ export function DocumentViewer({ versionId, pageCount, fields, initialPage, canC
                   </div>
                 </div>
                 {aiPending && (
-                  <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-teal-bright/40 bg-teal-bright/10 px-2 py-0.5 text-[11px] font-medium text-teal-bright">
+                  <p className="mt-1 inline-flex items-center gap-1 rounded-full border border-teal/30 bg-teal/10 px-2 py-0.5 text-[11px] font-medium text-teal">
                     <Sparkles className="size-3" /> AI suggestion · {canCorrect ? "needs your confirmation" : "an AICTE reviewer will confirm it"}
                   </p>
                 )}

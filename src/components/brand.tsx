@@ -3,7 +3,7 @@
  * evidence). On coloured headers use `inverted` (white tile, navy waves).
  */
 export function BrandMark({ className = "size-7", inverted = false }: { className?: string; inverted?: boolean }) {
-  const bg = inverted ? "#ffffff" : "var(--color-accent-fill)";
+  const bg = inverted ? "#ffffff" : "var(--color-accent)";
   const wave = inverted ? "#0b2a5b" : "#ffffff";
   const check = inverted ? "#c77d0a" : "#f6c164";
   return (

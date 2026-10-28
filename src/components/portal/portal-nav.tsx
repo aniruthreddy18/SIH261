@@ -22,7 +22,7 @@ export function PortalNav() {
           key={href}
           href={href}
           aria-current={active(href) ? "page" : undefined}
-          className={cn("flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors", active(href) ? "bg-accent-fill text-white shadow-sm" : "text-ink-2 hover:bg-accent-soft hover:text-accent")}
+          className={cn("flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors", active(href) ? "bg-accent text-white shadow-sm" : "text-ink-2 hover:bg-accent-soft hover:text-accent")}
         >
           <Icon className="size-4" />
           {label}
