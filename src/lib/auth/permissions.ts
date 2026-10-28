@@ -80,7 +80,7 @@ export interface Actor {
 }
 
 /** A system actor is used by background services (seed, validation engine). */
-export const SYSTEM_LABEL = "system:aegis";
+export const SYSTEM_LABEL = "system:pravah";
 
 export function hasPermission(role: Role, permission: Permission): boolean {
   return ROLE_PERMISSIONS[role].includes(permission);

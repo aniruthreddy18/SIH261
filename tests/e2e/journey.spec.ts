@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient({ datasourceUrl: "file:./e2e.db" });
-const PASSWORD = "Aegis@Demo2026";
+const PASSWORD = "Pravah@Demo2026";
 const sample = (f: string) => path.resolve(__dirname, "../../samples", f);
 
 /** Institutions use the Institution login; AICTE staff use the official sign-in. */
@@ -29,7 +29,7 @@ test.afterAll(async () => db.$disconnect());
 test("rejects bad credentials and requires authentication", async ({ page, request }) => {
   await page.goto("/applications");
   await expect(page).toHaveURL(/\/login/);
-  await page.fill("#email", "scrutiny@aegis.demo");
+  await page.fill("#email", "scrutiny@pravah.demo");
   await page.fill("#password", "wrong-password");
   await page.click("button[type=submit]");
   await expect(page.getByRole("alert").filter({ hasText: "Invalid email or password" })).toBeVisible();
@@ -40,13 +40,13 @@ test("rejects bad credentials and requires authentication", async ({ page, reque
 test("keeps institutions and AICTE staff on separate sign-in portals", async ({ page }) => {
   // An institution account is refused on the AICTE sign-in…
   await page.goto("/login");
-  await page.fill("#email", "applicant.meridian@aegis.demo");
+  await page.fill("#email", "applicant.meridian@pravah.demo");
   await page.fill("#password", PASSWORD);
   await page.click("button[type=submit]");
   await expect(page.getByRole("alert").filter({ hasText: "Please use the Institution login" })).toBeVisible();
   // …and a staff account is refused on the Institution login.
   await page.goto("/institution/login");
-  await page.fill("#email", "scrutiny@aegis.demo");
+  await page.fill("#email", "scrutiny@pravah.demo");
   await page.fill("#password", PASSWORD);
   await page.click("button[type=submit]");
   await expect(page.getByRole("alert").filter({ hasText: "Please use the AICTE official sign-in" })).toBeVisible();
@@ -54,14 +54,14 @@ test("keeps institutions and AICTE staff on separate sign-in portals", async ({ 
   await page.goto("/portal/help");
   await expect(page).toHaveURL(/\/institution\/login/);
   // Officials cannot enter the portal.
-  await signIn(page, "scrutiny@aegis.demo");
+  await signIn(page, "scrutiny@pravah.demo");
   await page.goto("/portal");
   await expect(page).toHaveURL(/\/$/);
 });
 
 test("enforces role permissions and cross-institution isolation on the server", async ({ page }) => {
   const sunrise = await appId("Sunrise");
-  await signIn(page, "applicant.meridian@aegis.demo");
+  await signIn(page, "applicant.meridian@pravah.demo");
   await expect(page).toHaveURL(/\/portal$/);
   await page.goto("/portal/applications");
   await expect(page.getByText("Meridian Institute of Management").first()).toBeVisible();
@@ -79,7 +79,7 @@ test("enforces role permissions and cross-institution isolation on the server", 
 });
 
 test("rejects a renamed non-PDF upload with a clear message", async ({ page }) => {
-  await signIn(page, "applicant.greenfield@aegis.demo");
+  await signIn(page, "applicant.greenfield@pravah.demo");
   await page.goto(`/portal/applications/${await appId("Greenfield")}?view=documents`);
   await page.getByTestId("upload-input").first().setInputFiles(sample("invalid-renamed-file.pdf"));
   await page.getByTestId("upload-submit").first().click();
@@ -90,7 +90,7 @@ test("full journey: findings → rectification → revalidation → verification
   const id = await appId("Meridian");
 
   // 1. Scrutiny officer reviews the expired-certificate finding and returns the application.
-  await signIn(page, "scrutiny@aegis.demo");
+  await signIn(page, "scrutiny@pravah.demo");
   await page.goto(`/applications/${id}?tab=findings`);
   await expect(page.getByText("Validity does not cover the required date").first()).toBeVisible();
   await expect(page.getByText("page 1").first()).toBeVisible();
@@ -102,7 +102,7 @@ test("full journey: findings → rectification → revalidation → verification
 
   // 2. In the Institution Portal, the institution replaces the NOC and submits the
   //    rectification (revalidation runs).
-  await signIn(page, "applicant.meridian@aegis.demo");
+  await signIn(page, "applicant.meridian@pravah.demo");
   await expect(page.getByText("Correction requested").first()).toBeVisible();
   await page.goto(`/portal/applications/${id}`);
   await page.getByRole("button", { name: "Upload replacement" }).first().click();
@@ -122,7 +122,7 @@ test("full journey: findings → rectification → revalidation → verification
   await expect(page.getByTestId("app-status")).toHaveText("Automated checks passed");
 
   // 3. The scrutiny & verification officer verifies the new NOC against the (simulated) issuer.
-  await signIn(page, "scrutiny@aegis.demo");
+  await signIn(page, "scrutiny@pravah.demo");
   await page.goto(`/applications/${id}?tab=verification`);
   await page.getByRole("button", { name: "Run issuer verification" }).click();
   await expectToast(page, "Verification attempted");
@@ -130,7 +130,7 @@ test("full journey: findings → rectification → revalidation → verification
   await expect(page.getByText("Simulated response from a demo source").first()).toBeVisible();
 
   // 4. Scrutiny officer forwards for authorised review.
-  await signIn(page, "scrutiny@aegis.demo");
+  await signIn(page, "scrutiny@pravah.demo");
   await page.goto(`/applications/${id}`);
   await page.getByRole("button", { name: "Forward for authorised review" }).click();
   await page.getByRole("dialog").locator("textarea").fill("All checks pass after rectification; NOC verified with simulated issuer.");
@@ -138,13 +138,13 @@ test("full journey: findings → rectification → revalidation → verification
   await expectToast(page, "Forwarded for authorised review");
 
   // 5. Senior official records a human review outcome with reason and reference.
-  await signIn(page, "senior@aegis.demo");
+  await signIn(page, "senior@pravah.demo");
   await page.goto(`/applications/${id}`);
   await page.getByRole("button", { name: "Record review outcome" }).click();
   const d = page.getByRole("dialog");
   await d.locator("select").selectOption("SATISFACTORY_FOR_FURTHER_PROCESSING");
   await d.locator("textarea").fill("Scrutiny satisfactory on documentary evidence; forward for statutory processing.");
-  await d.locator("input[name=reference]").fill("AEG/SO/2026/118");
+  await d.locator("input[name=reference]").fill("PRV/SO/2026/118");
   await d.getByRole("button", { name: "Record outcome" }).click();
   await expectToast(page, "Human review outcome recorded");
   await page.goto(`/applications/${id}?tab=review`);
@@ -179,7 +179,7 @@ test("local AI suggests fields from a prose certificate; rules wait for an offic
   };
 
   // 1. The institution uploads a certificate written as prose (no "Label: value" lines).
-  await signIn(page, "applicant.greenfield@aegis.demo");
+  await signIn(page, "applicant.greenfield@pravah.demo");
   await page.goto(`/portal/applications/${id}?view=documents`);
   await page.locator("li").filter({ hasText: "Fire & building safety NOC" }).first().getByRole("button", { name: "Replace" }).click();
   const dialog = page.getByRole("dialog");
@@ -189,7 +189,7 @@ test("local AI suggests fields from a prose certificate; rules wait for an offic
   await expect(dialog.getByText("Uploaded and processed")).toBeVisible({ timeout: 120_000 });
 
   // 2. The officer sees the AI suggestions; validation routes them to review instead of deciding.
-  await signIn(page, "scrutiny@aegis.demo");
+  await signIn(page, "scrutiny@pravah.demo");
   await page.goto(`/documents/${noc.id}`);
   const expiry = page.locator("li").filter({ has: page.getByRole("button", { name: "Confirm AI suggestion" }) }).filter({ hasText: "Expiry date" }).first();
   await expect(expiry).toContainText("2 March 2029");

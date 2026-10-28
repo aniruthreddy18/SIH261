@@ -47,26 +47,26 @@ describe("seeded scenarios", () => {
 
 describe("authentication", () => {
   it("accepts valid credentials and rejects invalid ones without revealing which part failed", async () => {
-    const ok = await login("scrutiny@aegis.demo", "Aegis@Demo2026", { ip: "t1" });
+    const ok = await login("scrutiny@pravah.demo", "Pravah@Demo2026", { ip: "t1" });
     expect(ok.ok).toBe(true);
-    const bad = await login("scrutiny@aegis.demo", "nope", { ip: "t1" });
-    const unknown = await login("nobody@aegis.demo", "nope", { ip: "t1" });
+    const bad = await login("scrutiny@pravah.demo", "nope", { ip: "t1" });
+    const unknown = await login("nobody@pravah.demo", "nope", { ip: "t1" });
     expect(bad.ok || unknown.ok).toBe(false);
     if (!bad.ok && !unknown.ok) expect(bad.error).toBe(unknown.error);
-    const stored = await prisma.user.findUniqueOrThrow({ where: { email: "scrutiny@aegis.demo" } });
+    const stored = await prisma.user.findUniqueOrThrow({ where: { email: "scrutiny@pravah.demo" } });
     expect(stored.passwordHash.startsWith("scrypt$")).toBe(true);
   });
   it("keeps institutions and AICTE staff on separate sign-in portals", async () => {
-    const staffOnInstitution = await login("admin@aegis.demo", "Aegis@Demo2026", { ip: "p1", portal: "INSTITUTION" });
+    const staffOnInstitution = await login("admin@pravah.demo", "Pravah@Demo2026", { ip: "p1", portal: "INSTITUTION" });
     expect(staffOnInstitution.ok).toBe(false);
     if (!staffOnInstitution.ok) expect(staffOnInstitution.error).toContain("AICTE official sign-in");
-    const institutionOnOfficial = await login("applicant.valley@aegis.demo", "Aegis@Demo2026", { ip: "p1", portal: "OFFICIAL" });
+    const institutionOnOfficial = await login("applicant.valley@pravah.demo", "Pravah@Demo2026", { ip: "p1", portal: "OFFICIAL" });
     expect(institutionOnOfficial.ok).toBe(false);
     if (!institutionOnOfficial.ok) expect(institutionOnOfficial.error).toContain("Institution login");
-    expect((await login("applicant.valley@aegis.demo", "Aegis@Demo2026", { ip: "p1", portal: "INSTITUTION" })).ok).toBe(true);
-    expect((await login("admin@aegis.demo", "Aegis@Demo2026", { ip: "p1", portal: "OFFICIAL" })).ok).toBe(true);
+    expect((await login("applicant.valley@pravah.demo", "Pravah@Demo2026", { ip: "p1", portal: "INSTITUTION" })).ok).toBe(true);
+    expect((await login("admin@pravah.demo", "Pravah@Demo2026", { ip: "p1", portal: "OFFICIAL" })).ok).toBe(true);
     // A wrong password on the wrong portal still gives the generic error (portal is checked only after the password).
-    const guess = await login("admin@aegis.demo", "wrong", { ip: "p2", portal: "INSTITUTION" });
+    const guess = await login("admin@pravah.demo", "wrong", { ip: "p2", portal: "INSTITUTION" });
     if (!guess.ok) expect(guess.error).toBe("Invalid email or password.");
     expect(await prisma.auditEvent.count({ where: { reason: "Wrong sign-in portal" } })).toBe(2);
   });
@@ -76,7 +76,7 @@ describe("authentication", () => {
   });
   it("rate-limits repeated failures", async () => {
     let last;
-    for (let i = 0; i < 7; i++) last = await login("senior@aegis.demo", "wrong", { ip: "rl" });
+    for (let i = 0; i < 7; i++) last = await login("senior@pravah.demo", "wrong", { ip: "rl" });
     expect(last && !last.ok && last.error).toContain("Too many");
   });
 });
@@ -84,31 +84,31 @@ describe("authentication", () => {
 describe("access control and isolation", () => {
   it("prevents applicants from reading other institutions' applications", async () => {
     const sunrise = await appByName("Sunrise");
-    await expect(getApplicationDetail(A("applicant.meridian@aegis.demo"), sunrise.id)).rejects.toBeInstanceOf(NotFoundError);
-    await expect(buildReportData(A("applicant.meridian@aegis.demo"), sunrise.id)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(getApplicationDetail(A("applicant.meridian@pravah.demo"), sunrise.id)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(buildReportData(A("applicant.meridian@pravah.demo"), sunrise.id)).rejects.toBeInstanceOf(NotFoundError);
   });
   it("blocks privileged actions for unauthorised roles", async () => {
     const meridian = await appByName("Meridian");
     const f = (await openFindings(meridian.id))[0];
-    await expect(reviewFinding(A("applicant.meridian@aegis.demo"), f.id, "RESOLVE", "I resolve my own finding")).rejects.toBeInstanceOf(AuthorizationError);
-    await expect(saveRuleVersion(A("scrutiny@aegis.demo"), {} as never)).rejects.toBeInstanceOf(AuthorizationError);
-    await expect(recordDecision(A("scrutiny@aegis.demo"), meridian.id, "DEFICIENCIES_NOTED", "not allowed for this role", "X-1")).rejects.toBeInstanceOf(AuthorizationError);
+    await expect(reviewFinding(A("applicant.meridian@pravah.demo"), f.id, "RESOLVE", "I resolve my own finding")).rejects.toBeInstanceOf(AuthorizationError);
+    await expect(saveRuleVersion(A("scrutiny@pravah.demo"), {} as never)).rejects.toBeInstanceOf(AuthorizationError);
+    await expect(recordDecision(A("scrutiny@pravah.demo"), meridian.id, "DEFICIENCIES_NOTED", "not allowed for this role", "X-1")).rejects.toBeInstanceOf(AuthorizationError);
   });
   it("prevents applicants creating applications for another institution", async () => {
     const other = await prisma.institution.findFirstOrThrow({ where: { name: { contains: "Sunrise" } } });
-    await expect(createApplication(A("applicant.meridian@aegis.demo"), { institutionId: other.id, templateCode: "EOA", institutionName: "X Inst", institutionCategory: "Eng", academicYear: "2027-28", contactName: "A B", contactEmail: "a@b.co", programmes: [{ name: "B.Tech", level: "UG", intake: 10 }] })).rejects.toBeInstanceOf(DomainError);
+    await expect(createApplication(A("applicant.meridian@pravah.demo"), { institutionId: other.id, templateCode: "EOA", institutionName: "X Inst", institutionCategory: "Eng", academicYear: "2027-28", contactName: "A B", contactEmail: "a@b.co", programmes: [{ name: "B.Tech", level: "UG", intake: 10 }] })).rejects.toBeInstanceOf(DomainError);
   });
 });
 
 describe("application lifecycle on a new application", () => {
   let appId: string;
-  const greenfield = "applicant.greenfield@aegis.demo";
+  const greenfield = "applicant.greenfield@pravah.demo";
 
   it("creates an application with a server-generated reference", async () => {
     const inst = await prisma.institution.findFirstOrThrow({ where: { name: { contains: "Greenfield" } } });
     const app = await createApplication(A(greenfield), { institutionId: inst.id, templateCode: "EOA", institutionName: inst.name, institutionCode: inst.code, institutionCategory: inst.category, academicYear: "2028-29", contactName: "Dr. S. Karthik", contactEmail: greenfield, programmes: [{ name: "B.Tech Artificial Intelligence and Data Science", level: "UG", intake: 60 }] });
     appId = app.id;
-    expect(app.reference).toMatch(/^AEG-2028-\d{6}$/);
+    expect(app.reference).toMatch(/^PRV-2028-\d{6}$/);
     expect(app.status).toBe("DRAFT");
     expect(await prisma.auditEvent.count({ where: { applicationId: appId, eventType: "APPLICATION_CREATED" } })).toBe(1);
   });
@@ -173,12 +173,12 @@ describe("application lifecycle on a new application", () => {
 
   it("records an audited field correction without overwriting the machine value, and uses it on rerun", async () => {
     const field = await prisma.extractedField.findFirstOrThrow({ where: { key: "institutionName", version: { isCurrent: true, document: { applicationId: appId, categoryCode: "NOC_PERMISSION" } } }, include: { version: true } });
-    await correctField(A("scrutiny@aegis.demo"), field.id, "Greenfield College of Engineering", "Confirmed against applicant's original during review");
+    await correctField(A("scrutiny@pravah.demo"), field.id, "Greenfield College of Engineering", "Confirmed against applicant's original during review");
     const after = await prisma.extractedField.findUniqueOrThrow({ where: { id: field.id } });
     expect(after.value).toBe("Sunrise Institute of Technology");
     expect(after.correctedValue).toBe("Greenfield College of Engineering");
     expect(await prisma.auditEvent.count({ where: { applicationId: appId, eventType: "FIELD_CORRECTED" } })).toBe(1);
-    const r = await runValidation(A("scrutiny@aegis.demo"), appId);
+    const r = await runValidation(A("scrutiny@pravah.demo"), appId);
     const res = await prisma.ruleResult.findMany({ where: { runId: r.runId, ruleCode: "XDOC-NAME-001", documentId: field.version.documentId } });
     expect(res.map((x) => x.status)).toEqual(["PASS"]);
     const cmp = await getRunComparison(appId, r.runId);
@@ -189,7 +189,7 @@ describe("application lifecycle on a new application", () => {
 describe("issuer verification", () => {
   it("verifies documents through the simulated source and labels the source type", async () => {
     const sunrise = await appByName("Sunrise");
-    const res = await runVerification(A("scrutiny@aegis.demo"), sunrise.id);
+    const res = await runVerification(A("scrutiny@pravah.demo"), sunrise.id);
     expect(res.length).toBe(4);
     expect(res.every((r) => r.status === "VERIFIED")).toBe(true);
     const v = await prisma.issuerVerification.findFirstOrThrow({ where: { applicationId: sunrise.id }, orderBy: { requestedAt: "desc" } });
@@ -198,23 +198,23 @@ describe("issuer verification", () => {
   it("handles an outage with bounded retries and routes it to review", async () => {
     const valley = await appByName("Valley");
     const northfield = await appByName("Northfield");
-    await updateSettings(A("admin@aegis.demo"), { syntheticIssuerOutage: "true", issuerMaxRetries: "1" });
+    await updateSettings(A("admin@pravah.demo"), { syntheticIssuerOutage: "true", issuerMaxRetries: "1" });
     try {
-      const res = await runVerification(A("scrutiny@aegis.demo"), northfield.id);
+      const res = await runVerification(A("scrutiny@pravah.demo"), northfield.id);
       expect(res.some((r) => r.status === "SOURCE_UNAVAILABLE")).toBe(true);
       const v = await prisma.issuerVerification.findFirstOrThrow({ where: { applicationId: northfield.id, status: "SOURCE_UNAVAILABLE" }, orderBy: { requestedAt: "desc" } });
       expect(v.attempts).toBe(2);
       expect(await prisma.auditEvent.count({ where: { applicationId: northfield.id, eventType: "ISSUER_SOURCE_UNAVAILABLE" } })).toBeGreaterThan(0);
       expect(valley.status).toBe("READY_FOR_AUTHORIZED_REVIEW");
     } finally {
-      await updateSettings(A("admin@aegis.demo"), { syntheticIssuerOutage: "false", issuerMaxRetries: "2" });
+      await updateSettings(A("admin@pravah.demo"), { syntheticIssuerOutage: "false", issuerMaxRetries: "2" });
     }
   });
   it("records an unsupported category as NOT_SUPPORTED, never as verified", async () => {
     await prisma.issuerSource.update({ where: { id: "synthetic-demo-issuer" }, data: { enabled: false } });
     try {
       const sunrise = await appByName("Sunrise");
-      const res = await runVerification(A("scrutiny@aegis.demo"), sunrise.id);
+      const res = await runVerification(A("scrutiny@pravah.demo"), sunrise.id);
       expect(res.filter((r) => r.status === "NOT_SUPPORTED").length).toBe(3);
     } finally {
       await prisma.issuerSource.update({ where: { id: "synthetic-demo-issuer" }, data: { enabled: true } });
@@ -223,8 +223,8 @@ describe("issuer verification", () => {
   it("accepts a manual confirmation only with a reason and reference", async () => {
     const riverside = await appByName("Riverside");
     const fee = await prisma.document.findFirstOrThrow({ where: { applicationId: riverside.id, categoryCode: "FEE_RECEIPT" } });
-    await expect(recordManualVerification(A("scrutiny@aegis.demo"), fee.id, "VERIFIED", "ok", "")).rejects.toBeInstanceOf(DomainError);
-    await recordManualVerification(A("scrutiny@aegis.demo"), fee.id, "VERIFIED", "Confirmed with ledger operations desk by email", "MAIL/2026/77");
+    await expect(recordManualVerification(A("scrutiny@pravah.demo"), fee.id, "VERIFIED", "ok", "")).rejects.toBeInstanceOf(DomainError);
+    await recordManualVerification(A("scrutiny@pravah.demo"), fee.id, "VERIFIED", "Confirmed with ledger operations desk by email", "MAIL/2026/77");
     const f = await prisma.finding.findFirstOrThrow({ where: { applicationId: riverside.id, fingerprint: `VERIFY|${fee.id}` } });
     expect(f.status).toBe("RESOLVED");
     const v = await prisma.issuerVerification.findFirstOrThrow({ where: { documentId: fee.id, isManual: true } });
@@ -236,19 +236,19 @@ describe("review, rectification and revalidation", () => {
   it("requires a reason for every review action", async () => {
     const highland = await appByName("Highland");
     const f = (await openFindings(highland.id))[0];
-    await expect(reviewFinding(A("scrutiny@aegis.demo"), f.id, "DISMISS", "")).rejects.toBeInstanceOf(DomainError);
+    await expect(reviewFinding(A("scrutiny@pravah.demo"), f.id, "DISMISS", "")).rejects.toBeInstanceOf(DomainError);
   });
 
   it("does not clear an unrelated finding when a different document is replaced", async () => {
     const coastal = await appByName("Coastal");
     const before = await openFindings(coastal.id);
     const idFinding = before.find((f) => f.ruleCode === "XDOC-ID-001")!;
-    await requestRectification(A("scrutiny@aegis.demo"), coastal.id, before.map((f) => f.id), "Correct the identifier and intake discrepancies.");
+    await requestRectification(A("scrutiny@pravah.demo"), coastal.id, before.map((f) => f.id), "Correct the identifier and intake discrepancies.");
     const noc = await prisma.document.findFirstOrThrow({ where: { applicationId: coastal.id, categoryCode: "NOC_PERMISSION" } });
     const nocBuf = await renderDoc(SAMPLE_FILES.find((s) => s.file === "lakeview-fire-noc.pdf")!);
     // Replace an unrelated document (the NOC) only.
-    await uploadDocument(A("applicant.coastal@aegis.demo"), { applicationId: coastal.id, categoryCode: "NOC_PERMISSION", fileName: "noc.pdf", mimeType: "application/pdf", buffer: nocBuf.buffer, replaceDocumentId: noc.id, reason: "Re-uploaded" });
-    await submitRectification(A("applicant.coastal@aegis.demo"), coastal.id, "Re-uploaded the NOC");
+    await uploadDocument(A("applicant.coastal@pravah.demo"), { applicationId: coastal.id, categoryCode: "NOC_PERMISSION", fileName: "noc.pdf", mimeType: "application/pdf", buffer: nocBuf.buffer, replaceDocumentId: noc.id, reason: "Re-uploaded" });
+    await submitRectification(A("applicant.coastal@pravah.demo"), coastal.id, "Re-uploaded the NOC");
     const after = await prisma.finding.findUniqueOrThrow({ where: { id: idFinding.id } });
     expect(after.status).toBe("OPEN");
     // History is preserved: the earlier NOC version is retained.
@@ -258,21 +258,21 @@ describe("review, rectification and revalidation", () => {
   it("clears the finding when the corrected evidence is submitted, preserving history", async () => {
     const meridian = await appByName("Meridian");
     const expired = (await openFindings(meridian.id)).find((f) => f.ruleCode === "DATE-VAL-001")!;
-    await requestRectification(A("scrutiny@aegis.demo"), meridian.id, [expired.id], "Upload a renewed fire NOC covering the academic year.");
+    await requestRectification(A("scrutiny@pravah.demo"), meridian.id, [expired.id], "Upload a renewed fire NOC covering the academic year.");
     const noc = await prisma.document.findFirstOrThrow({ where: { applicationId: meridian.id, categoryCode: "NOC_PERMISSION" } });
     const renewed = await renderDoc(SAMPLE_FILES.find((s) => s.file === "meridian-fire-noc-renewed.pdf")!);
-    await uploadDocument(A("applicant.meridian@aegis.demo"), { applicationId: meridian.id, categoryCode: "NOC_PERMISSION", fileName: "renewed.pdf", mimeType: "application/pdf", buffer: renewed.buffer, replaceDocumentId: noc.id, reason: "Renewed NOC" });
-    const run = await submitRectification(A("applicant.meridian@aegis.demo"), meridian.id, "Renewed NOC uploaded");
+    await uploadDocument(A("applicant.meridian@pravah.demo"), { applicationId: meridian.id, categoryCode: "NOC_PERMISSION", fileName: "renewed.pdf", mimeType: "application/pdf", buffer: renewed.buffer, replaceDocumentId: noc.id, reason: "Renewed NOC" });
+    const run = await submitRectification(A("applicant.meridian@pravah.demo"), meridian.id, "Renewed NOC uploaded");
     expect(run.status).toBe("AUTO_PASSED");
     const f = await prisma.finding.findUniqueOrThrow({ where: { id: expired.id } });
     expect(f.status).toBe("AUTO_CLEARED");
     expect(await prisma.ruleResult.count({ where: { run: { applicationId: meridian.id, runNumber: 1 }, ruleCode: "DATE-VAL-001", status: "FAIL" } })).toBe(1);
 
     // Forwarding requires verification of the new version, then a senior official records the outcome.
-    await expect(forwardForAuthorizedReview(A("scrutiny@aegis.demo"), meridian.id, "Forwarding after rectification")).rejects.toThrow(/verification is incomplete/);
-    await runVerification(A("scrutiny@aegis.demo"), meridian.id);
-    await forwardForAuthorizedReview(A("scrutiny@aegis.demo"), meridian.id, "Forwarding after rectification");
-    await recordDecision(A("senior@aegis.demo"), meridian.id, "SATISFACTORY_FOR_FURTHER_PROCESSING", "Documentary scrutiny satisfactory.", "AEG/SO/2026/9");
+    await expect(forwardForAuthorizedReview(A("scrutiny@pravah.demo"), meridian.id, "Forwarding after rectification")).rejects.toThrow(/verification is incomplete/);
+    await runVerification(A("scrutiny@pravah.demo"), meridian.id);
+    await forwardForAuthorizedReview(A("scrutiny@pravah.demo"), meridian.id, "Forwarding after rectification");
+    await recordDecision(A("senior@pravah.demo"), meridian.id, "SATISFACTORY_FOR_FURTHER_PROCESSING", "Documentary scrutiny satisfactory.", "PRV/SO/2026/9");
     const closed = await prisma.application.findUniqueOrThrow({ where: { id: meridian.id } });
     expect(closed.status).toBe("CLOSED");
     const decisionAudit = await prisma.auditEvent.findFirstOrThrow({ where: { applicationId: meridian.id, eventType: "HUMAN_DECISION_RECORDED" } });
@@ -289,15 +289,15 @@ describe("audit and reports", () => {
   it("never stores passwords or tokens in the audit log", async () => {
     const events = await prisma.auditEvent.findMany();
     const blob = JSON.stringify(events);
-    expect(blob).not.toContain("Aegis@Demo2026");
+    expect(blob).not.toContain("Pravah@Demo2026");
     expect(blob).not.toContain("scrypt$");
   });
   it("generates a PDF report and hides internal notes and other applications from applicants", async () => {
     const highland = await appByName("Highland");
     const f = (await openFindings(highland.id))[0];
-    await reviewFinding(A("scrutiny@aegis.demo"), f.id, "NOTE", "Internal: compare with the other institution's receipt");
-    const officer = await buildReportData(A("scrutiny@aegis.demo"), highland.id);
-    const applicant = await buildReportData(A("applicant.highland@aegis.demo"), highland.id);
+    await reviewFinding(A("scrutiny@pravah.demo"), f.id, "NOTE", "Internal: compare with the other institution's receipt");
+    const officer = await buildReportData(A("scrutiny@pravah.demo"), highland.id);
+    const applicant = await buildReportData(A("applicant.highland@pravah.demo"), highland.id);
     expect(officer.reviewActions.some((r) => r.reason.startsWith("Internal:"))).toBe(true);
     expect(applicant.reviewActions.some((r) => r.reason.startsWith("Internal:"))).toBe(false);
     expect(applicant.verifications.every((v) => v.sourceType)).toBe(true);

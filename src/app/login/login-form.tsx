@@ -14,7 +14,7 @@ export function LoginForm({ next, portal }: { next: string; portal: "INSTITUTION
       const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".demo-fill");
       if (!btn || !email.current || !password.current) return;
       email.current.value = btn.dataset.demoEmail ?? "";
-      password.current.value = "Aegis@Demo2026";
+      password.current.value = "Pravah@Demo2026";
       password.current.focus();
     };
     document.addEventListener("click", onClick);

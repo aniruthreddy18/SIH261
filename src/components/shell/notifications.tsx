@@ -23,7 +23,7 @@ export function NotificationBell({ items, unread }: { items: NotificationView[];
       <DropdownTrigger asChild>
         <button className="relative rounded-md p-2 text-ink-2 hover:bg-subtle" aria-label={`Notifications (${unread} unread)`}>
           <Bell className="size-[18px]" />
-          {unread > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-bad px-1 text-[10px] font-semibold text-white tabular">{unread > 99 ? "99+" : unread}</span>}
+          {unread > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-bad-fill px-1 text-[10px] font-semibold text-white tabular">{unread > 99 ? "99+" : unread}</span>}
         </button>
       </DropdownTrigger>
       <DropdownContent className="w-[360px] p-0">

@@ -13,6 +13,6 @@ import { renderDoc } from "./lib/render";
     console.log(`samples/${spec.file}`);
   }
   // A text file disguised as a PDF, to demonstrate content-based upload rejection.
-  fs.writeFileSync(path.join(dir, "invalid-renamed-file.pdf"), "This is a plain-text file renamed to .pdf. Aegis rejects it because its content is not a PDF.\n");
+  fs.writeFileSync(path.join(dir, "invalid-renamed-file.pdf"), "This is a plain-text file renamed to .pdf. Pravah AI rejects it because its content is not a PDF.\n");
   console.log("samples/invalid-renamed-file.pdf");
 })();

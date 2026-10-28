@@ -12,5 +12,5 @@ export const GET = withActor<unknown>(async (req, actor) => {
   const { events } = await listAuditEvents(actor, filters);
   await recordAudit({ actor, eventType: "AUDIT_EXPORTED", action: `Exported ${events.length} audit event(s) as CSV`, after: filters });
   const csv = toCsv(events, ["id", "createdAt", "actorLabel", "actorRole", "applicationReference", "documentId", "eventType", "action", "reason", "beforeJson", "afterJson", "validationRunId", "ruleVersion", "verificationRef", "correlationId"]);
-  return new Response(csv, { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": contentDisposition("attachment", "aegis-audit.csv"), "cache-control": "private, no-store" } });
+  return new Response(csv, { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": contentDisposition("attachment", "pravah-audit.csv"), "cache-control": "private, no-store" } });
 });

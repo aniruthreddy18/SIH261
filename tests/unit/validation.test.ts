@@ -74,7 +74,7 @@ describe("cross-document consistency", () => {
   it("compares identifiers and intake against the matching programme", () => {
     const ctx = context({
       documents: [
-        doc("AFFIDAVIT", [field("institutionCode", "AEG-INST-1044", "AEGINST1044")]),
+        doc("AFFIDAVIT", [field("institutionCode", "PRV-INST-1044", "PRVINST1044")]),
         doc("PREVIOUS_APPROVAL", [field("programmeName", "B.Tech CSE"), field("approvedIntake", "90", "90")]),
       ],
     });
@@ -93,7 +93,7 @@ describe("cross-document consistency", () => {
 
 describe("institutional records", () => {
   it("fails when intake exceeds the record and when identifier differs", () => {
-    const ctx = context({ institutionCode: "AEG-INST-9999", programmes: [{ name: "B.Tech Computer Science and Engineering", level: "UG", intake: 180 }] });
+    const ctx = context({ institutionCode: "PRV-INST-9999", programmes: [{ name: "B.Tech Computer Science and Engineering", level: "UG", intake: 180 }] });
     const id = evaluateRules(ctx, [rule("REC-ID", "RECORD_MATCH", { aspect: "INSTITUTION_IDENTITY" })]);
     expect(id.find((x) => x.subjectKey.endsWith("code"))!.status).toBe("FAIL");
     expect(id.find((x) => x.subjectKey.endsWith("name"))!.status).toBe("PASS");

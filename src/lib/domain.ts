@@ -53,7 +53,7 @@ export const APPLICATION_STATUS_DESCRIPTIONS: Record<ApplicationStatus, string> 
   RECTIFICATION_REQUIRED: "The institution has been asked to correct identified deficiencies.",
   READY_FOR_AUTHORIZED_REVIEW:
     "Automated workflow complete; awaiting review by an authorised official.",
-  CLOSED: "A recorded human review outcome has closed this application in Aegis.",
+  CLOSED: "A recorded human review outcome has closed this application in Pravah AI.",
 };
 
 export const RULE_RESULT_STATUSES = [
@@ -151,4 +151,4 @@ export const RULE_CATEGORY_LABELS: Record<RuleCategory, string> = {
 
 /** Mandatory disclaimer shown on every report and decision surface. */
 export const DECISION_SUPPORT_DISCLAIMER =
-  "Aegis is a decision-support prototype. Its outputs are not an official AICTE approval, not a definitive finding of fraud, and not a substitute for inspection or statutory scrutiny. Final regulatory decisions remain with competent authorities.";
+  "Pravah AI is a decision-support prototype. Its outputs are not an official AICTE approval, not a definitive finding of fraud, and not a substitute for inspection or statutory scrutiny. Final regulatory decisions remain with competent authorities.";

@@ -10,7 +10,7 @@ const record: SyntheticRecord = {
   categoryCode: "ACCREDITATION",
   issuerName: "Demo Accreditation Registry",
   institutionName: "Sunrise Institute of Technology",
-  institutionCode: "AEG-INST-1001",
+  institutionCode: "PRV-INST-1001",
   issueDate: "2024-06-15",
   expiryDate: "2029-06-14",
   recordStatus: "ACTIVE",
@@ -22,7 +22,7 @@ function req(over: Partial<VerificationRequest["submitted"]> = {}, ref: string |
   return {
     categoryCode: "ACCREDITATION",
     referenceNumber: ref,
-    submitted: { institutionName: "Sunrise Institute of Technology", institutionCode: "AEG-INST-1001", issueDate: "2024-06-15", expiryDate: "2029-06-14", programmeName: null, approvedIntake: null, ...over },
+    submitted: { institutionName: "Sunrise Institute of Technology", institutionCode: "PRV-INST-1001", issueDate: "2024-06-15", expiryDate: "2029-06-14", programmeName: null, approvedIntake: null, ...over },
     asOf: "2026-10-26",
   };
 }
@@ -66,7 +66,7 @@ describe("synthetic issuer adapter", () => {
 
 describe("registry and official adapters", () => {
   it("compares previous-approval details with institutional records", async () => {
-    const reg = createInstitutionRegistryAdapter({ lookup: async () => ({ code: "AEG-INST-1001", name: "Sunrise Institute of Technology", programmes: [{ name: "B.Tech Computer Science and Engineering", approvedIntake: 120, lastApprovedYear: "2026-27" }] }), categories: ["PREVIOUS_APPROVAL"] });
+    const reg = createInstitutionRegistryAdapter({ lookup: async () => ({ code: "PRV-INST-1001", name: "Sunrise Institute of Technology", programmes: [{ name: "B.Tech Computer Science and Engineering", approvedIntake: 120, lastApprovedYear: "2026-27" }] }), categories: ["PREVIOUS_APPROVAL"] });
     const ok = await executeVerification(reg, { ...req({ programmeName: "B.Tech CSE", approvedIntake: "120" }), categoryCode: "PREVIOUS_APPROVAL" }, opts);
     expect(ok.response.status).toBe("VERIFIED");
     const bad = await executeVerification(reg, { ...req({ programmeName: "B.Tech CSE", approvedIntake: "180" }), categoryCode: "PREVIOUS_APPROVAL" }, opts);
@@ -113,7 +113,7 @@ describe("anomaly detection", () => {
       metadata: { creationDate: "2026-01-01T00:00:00.000Z", modificationDate: "2026-09-20T00:00:00.000Z", producer: "Adobe Photoshop" },
     });
     const findings = detectAnomalies(context({ documents: [d] }), [
-      { applicationId: "app-2", applicationReference: "AEG-2", documentId: "x", categoryCode: "FEE_RECEIPT", sha256: "zzz", referenceNormalized: "DPLTXN202655001" },
+      { applicationId: "app-2", applicationReference: "PRV-2", documentId: "x", categoryCode: "FEE_RECEIPT", sha256: "zzz", referenceNormalized: "DPLTXN202655001" },
     ]);
     const types = findings.map((f) => f.type).sort();
     expect(types).toEqual(["CROSS_APPLICATION_REPEATED_REFERENCE", "METADATA_CREATED_BEFORE_ISSUE", "METADATA_EDITING_SOFTWARE", "METADATA_MODIFIED_AFTER_CREATION"]);

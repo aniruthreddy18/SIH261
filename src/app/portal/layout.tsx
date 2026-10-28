@@ -8,7 +8,7 @@ import { UserMenu } from "@/components/shell/user-menu";
 import { PortalNav } from "@/components/portal/portal-nav";
 import { ROLE_THEME } from "@/lib/role-theme";
 
-export const metadata = { title: { default: "Institution Portal", template: "%s · Institution Portal · Aegis" } };
+export const metadata = { title: { default: "Institution Portal", template: "%s · Institution Portal · Pravah AI" } };
 
 /** The Institution Portal: a separate, simpler area for institution users only. */
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -27,7 +27,7 @@ export default async function PortalLayout({ children }: { children: React.React
           <div className="flex h-14 w-full items-center gap-3 px-4 sm:px-6 lg:px-8">
             <BrandMark inverted className="size-8" />
             <div className="min-w-0">
-              <p className="text-sm font-semibold leading-4">Aegis · Institution Portal</p>
+              <p className="text-sm font-semibold leading-4">Pravah AI · Institution Portal</p>
               <p className="truncate text-[11px] text-white/85">{institution ? `${institution.name} · ${institution.code}` : "Institution"}</p>
             </div>
             <div className="glass-strong ml-auto flex items-center gap-1 rounded-xl border px-1 text-ink">
@@ -36,7 +36,7 @@ export default async function PortalLayout({ children }: { children: React.React
             </div>
           </div>
         </div>
-        <div className="glass-bar border-b border-white/45 bg-white/32 shadow-[0_8px_24px_-18px_rgb(13_35_64/0.35)]">
+        <div className="glass-bar border-b border-white/10 bg-navy-deep/55 shadow-[0_8px_24px_-18px_rgb(13_35_64/0.35)]">
           <div className="w-full px-4 sm:px-6 lg:px-8">
             <PortalNav />
           </div>
@@ -45,7 +45,7 @@ export default async function PortalLayout({ children }: { children: React.React
       <main className="w-full flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       <footer className="w-full px-4 py-4 sm:px-6 lg:px-8">
         <p className="inline-block glass rounded-2xl px-3 py-1 text-[11px] text-ink-2">
-          Aegis Institution Portal · demo environment with synthetic data · decision support only — automated results are not an official AICTE approval.
+          Pravah AI Institution Portal · demo environment with synthetic data · decision support only — automated results are not an official AICTE approval.
         </p>
       </footer>
     </div>

@@ -1,4 +1,4 @@
-# Aegis architecture
+# Pravah AI architecture
 
 ## Principles
 

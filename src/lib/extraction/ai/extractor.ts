@@ -215,7 +215,7 @@ function buildContext(pages: PageText[]) {
 }
 
 // One extractor per server process (survives dev hot-reload).
-const g = globalThis as unknown as { __aegisAi?: LocalAiExtractor };
+const g = globalThis as unknown as { __pravahAi?: LocalAiExtractor };
 export function getAiExtractor(): LocalAiExtractor {
-  return (g.__aegisAi ??= new LocalAiExtractor());
+  return (g.__pravahAi ??= new LocalAiExtractor());
 }

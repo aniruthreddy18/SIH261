@@ -64,7 +64,7 @@ export default async function PortalHelp() {
             <ul className="divide-y divide-border">
               {t.requiredDocuments.map((r) => (
                 <li key={r.id} className="flex items-start gap-2 px-4 py-2 text-[13px]">
-                  <CheckCircle2 className={`mt-0.5 size-4 shrink-0 ${r.mandatory ? "text-green" : "text-faint"}`} />
+                  <CheckCircle2 className={`mt-0.5 size-4 shrink-0 ${r.mandatory ? "text-green-bright" : "text-faint"}`} />
                   <span><span className="text-ink">{r.label}</span> {!r.mandatory && <span className="text-xs text-muted">(optional)</span>}{r.guidance && <span className="block text-xs text-muted">{r.guidance}</span>}</span>
                 </li>
               ))}

@@ -1,4 +1,4 @@
-// Aegis — data model.
+// Pravah AI — data model.
 // SQLite is used for the self-contained demo; every type used here is portable to PostgreSQL
 // (switch `provider` and DATABASE_URL). JSON payloads are stored as TEXT for SQLite portability.
 

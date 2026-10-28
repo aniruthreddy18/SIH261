@@ -67,7 +67,7 @@ export async function recordAudit(input: AuditInput, tx: Tx = prisma): Promise<v
   await tx.auditEvent.create({
     data: {
       actorId: isUser ? a.userId : null,
-      actorLabel: isUser ? `${a.name} <${a.email}>` : a?.label ?? "system:aegis",
+      actorLabel: isUser ? `${a.name} <${a.email}>` : a?.label ?? "system:pravah",
       actorRole: isUser ? a.role : a?.role ?? "SYSTEM",
       applicationId: input.applicationId ?? null,
       documentId: input.documentId ?? null,

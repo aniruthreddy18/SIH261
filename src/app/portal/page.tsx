@@ -34,6 +34,7 @@ export default async function PortalHome() {
     <>
       <DashboardHero
         band={ROLE_THEME.APPLICANT.header}
+        dot={ROLE_THEME.APPLICANT.dot}
         eyebrow="Institution Portal"
         title={`Welcome, ${actor.name}`}
         subtitle={<>{institution?.name} — submit your documents, see what the checks found, and fix anything flagged.</>}

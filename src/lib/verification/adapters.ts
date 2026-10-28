@@ -2,7 +2,7 @@
 //
 //  * synthetic-demo-issuer      — SIMULATED. Answers from a clearly fictional record set.
 //  * demo-institution-registry  — SIMULATED. Compares previous-approval letters with the demo
-//                                  institutional records held in Aegis.
+//                                  institutional records held in Pravah AI.
 //  * official-provider          — REAL/SANDBOX. A configurable HTTP adapter for a future
 //                                  authorised API. Disabled unless credentials are configured.
 //
@@ -96,7 +96,7 @@ export function createInstitutionRegistryAdapter(opts: { lookup: (institutionCod
     id: "demo-institution-registry",
     name: "Demo Institutional Records Registry",
     sourceType: "SIMULATED",
-    description: "Compares previous-approval evidence with the synthetic institutional records seeded in Aegis. Not an AICTE system.",
+    description: "Compares previous-approval evidence with the synthetic institutional records seeded in Pravah AI. Not an AICTE system.",
     supports: (c) => opts.categories.includes(c),
     async verify(req) {
       const now = new Date().toISOString();

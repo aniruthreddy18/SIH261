@@ -7,7 +7,7 @@ const STATUS_COLOR: Record<string, string> = { PASS: "#15803d", VERIFIED: "#1580
 
 export function renderReportPdf(d: ReportData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: "A4", margins: { top: 56, bottom: 64, left: 50, right: 50 }, bufferPages: true, info: { Title: `Aegis validation report ${d.app.reference}`, Author: "Aegis prototype", Producer: "Aegis" } });
+    const doc = new PDFDocument({ size: "A4", margins: { top: 56, bottom: 64, left: 50, right: 50 }, bufferPages: true, info: { Title: `Pravah AI validation report ${d.app.reference}`, Author: "Pravah AI prototype", Producer: "Pravah AI" } });
     const chunks: Buffer[] = [];
     doc.on("data", (c: Buffer) => chunks.push(c));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
@@ -28,7 +28,7 @@ export function renderReportPdf(d: ReportData): Promise<Buffer> {
     const tag = (status: string) => doc.font("Helvetica-Bold").fontSize(9).fillColor(STATUS_COLOR[status] ?? MUTED).text(`[${status}] `, { continued: true });
 
     // Header
-    doc.font("Helvetica-Bold").fontSize(10).fillColor(ACCENT).text("AEGIS — APPLICATION VALIDATION & COMPLIANCE INTELLIGENCE");
+    doc.font("Helvetica-Bold").fontSize(10).fillColor(ACCENT).text("PRAVAH AI — APPLICATION VALIDATION & COMPLIANCE INTELLIGENCE");
     doc.font("Helvetica").fontSize(8).fillColor(MUTED).text("Prototype · DEMO ENVIRONMENT · Not an official AICTE product");
     doc.moveDown(0.8);
     h1(`Validation report — ${d.app.reference}`);
@@ -128,7 +128,7 @@ export function renderReportPdf(d: ReportData): Promise<Buffer> {
     for (let i = range.start; i < range.start + range.count; i++) {
       doc.switchToPage(i);
       doc.page.margins.bottom = 0;
-      doc.font("Helvetica").fontSize(7).fillColor(MUTED).text(`Aegis prototype · ${d.app.reference} · decision-support output, not an official approval · page ${i + 1} of ${range.count}`, 50, 800, { width: W, align: "center", lineBreak: false });
+      doc.font("Helvetica").fontSize(7).fillColor(MUTED).text(`Pravah AI prototype · ${d.app.reference} · decision-support output, not an official approval · page ${i + 1} of ${range.count}`, 50, 800, { width: W, align: "center", lineBreak: false });
     }
     doc.end();
   });

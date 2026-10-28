@@ -7,7 +7,7 @@ const PUBLIC = ["/login", "/institution/login"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const hasSession = Boolean(req.cookies.get("aegis_session")?.value);
+  const hasSession = Boolean(req.cookies.get("pravah_session")?.value);
   // Layouts read the path to route users into the correct portal.
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-pathname", pathname);

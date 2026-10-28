@@ -107,7 +107,7 @@ export default async function PortalApplicationPage({ params, searchParams }: { 
               <CardBody className="space-y-1 text-[13px]">
                 <p className="font-semibold text-ink">{DECISION_OUTCOMES[decision.outcome as DecisionOutcome] ?? decision.outcome}</p>
                 <p className="text-ink-2">{decision.reason}</p>
-                <p className="text-[11px] text-muted">Recorded human review action in Aegis — not an automatically generated regulatory approval.</p>
+                <p className="text-[11px] text-muted">Recorded human review action in Pravah AI — not an automatically generated regulatory approval.</p>
               </CardBody>
             </Card>
           )}

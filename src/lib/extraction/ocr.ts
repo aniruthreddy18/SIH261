@@ -59,7 +59,7 @@ class TesseractEngine implements OcrEngine {
     if (!this.worker) {
       this.worker = (async () => {
         const { createWorker } = await import("tesseract.js");
-        const cachePath = path.join(os.tmpdir(), "aegis-tesseract-cache");
+        const cachePath = path.join(os.tmpdir(), "pravah-tesseract-cache");
         fs.mkdirSync(cachePath, { recursive: true });
         return (await createWorker("eng", 1, { langPath: resolveLangPath()!, gzip: true, cachePath })) as unknown as TesseractWorker;
       })();
@@ -112,14 +112,14 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-const g = globalThis as unknown as { __aegisOcr?: OcrEngine };
+const g = globalThis as unknown as { __pravahOcr?: OcrEngine };
 export function getOcrEngine(): OcrEngine {
-  if (!g.__aegisOcr) g.__aegisOcr = new TesseractEngine();
-  return g.__aegisOcr;
+  if (!g.__pravahOcr) g.__pravahOcr = new TesseractEngine();
+  return g.__pravahOcr;
 }
 
 /** Terminate the OCR worker thread (for scripts and tests that must exit cleanly). */
 export async function shutdownOcr(): Promise<void> {
-  const e = g.__aegisOcr as (OcrEngine & { shutdown?: () => Promise<void> }) | undefined;
+  const e = g.__pravahOcr as (OcrEngine & { shutdown?: () => Promise<void> }) | undefined;
   await e?.shutdown?.();
 }

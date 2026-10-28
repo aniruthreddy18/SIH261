@@ -2,7 +2,7 @@
 // and people are invented. Nothing here is AICTE data.
 import type { DocSpec } from "./render";
 
-export const DEMO_PASSWORD = "Aegis@Demo2026";
+export const DEMO_PASSWORD = "Pravah@Demo2026";
 export const ACADEMIC_YEAR = "2027-28";
 
 export interface DemoInstitution {
@@ -18,21 +18,21 @@ export interface DemoInstitution {
 }
 
 export const INSTITUTIONS: DemoInstitution[] = [
-  { slug: "sunrise", code: "AEG-INST-1001", name: "Sunrise Institute of Technology", category: "Engineering & Technology", state: "Karnataka", city: "Mysuru", established: 2004, contact: "Dr. Priya Raman", programmes: [{ name: "B.Tech Computer Science and Engineering", level: "UG", approvedIntake: 120, lastApprovedYear: "2026-27" }, { name: "B.Tech Electronics and Communication Engineering", level: "UG", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
-  { slug: "lakeview", code: "AEG-INST-1012", name: "Lakeview College of Engineering", category: "Engineering & Technology", state: "Maharashtra", city: "Nashik", established: 2009, contact: "Prof. Anil Deshmukh", programmes: [{ name: "B.Tech Civil Engineering", level: "UG", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
-  { slug: "meridian", code: "AEG-INST-1027", name: "Meridian Institute of Management", category: "Management", state: "Gujarat", city: "Vadodara", established: 2011, contact: "Dr. Kavita Shah", programmes: [{ name: "Master of Business Administration", level: "PG", approvedIntake: 120, lastApprovedYear: "2026-27" }] },
-  { slug: "coastal", code: "AEG-INST-1040", name: "Coastal Institute of Pharmacy", category: "Pharmacy", state: "Kerala", city: "Kozhikode", established: 2013, contact: "Dr. Thomas Varghese", programmes: [{ name: "Bachelor of Pharmacy", level: "UG", approvedIntake: 100, lastApprovedYear: "2026-27" }] },
-  { slug: "northfield", code: "AEG-INST-1055", name: "Northfield School of Architecture", category: "Architecture", state: "Punjab", city: "Ludhiana", established: 2015, contact: "Ar. Simran Gill", programmes: [{ name: "Bachelor of Architecture", level: "UG", approvedIntake: 40, lastApprovedYear: "2026-27" }] },
-  { slug: "riverside", code: "AEG-INST-1063", name: "Riverside Polytechnic Institute", category: "Engineering & Technology (Diploma)", state: "Odisha", city: "Cuttack", established: 2001, contact: "Sri. Bikash Mohanty", programmes: [{ name: "Diploma in Civil Engineering", level: "Diploma", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
-  { slug: "highland", code: "AEG-INST-1078", name: "Highland Institute of Technology", category: "Engineering & Technology", state: "Uttarakhand", city: "Dehradun", established: 2010, contact: "Dr. Neha Joshi", programmes: [{ name: "B.Tech Mechanical Engineering", level: "UG", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
-  { slug: "greenfield", code: "AEG-INST-1081", name: "Greenfield College of Engineering", category: "Engineering & Technology", state: "Tamil Nadu", city: "Coimbatore", established: 2017, contact: "Dr. S. Karthik", programmes: [{ name: "B.Tech Artificial Intelligence and Data Science", level: "UG", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
-  { slug: "valley", code: "AEG-INST-1094", name: "Valley Institute of Technology", category: "Engineering & Technology", state: "Telangana", city: "Warangal", established: 2008, contact: "Dr. Ravi Kumar", programmes: [{ name: "B.Tech Information Technology", level: "UG", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
+  { slug: "sunrise", code: "PRV-INST-1001", name: "Sunrise Institute of Technology", category: "Engineering & Technology", state: "Karnataka", city: "Mysuru", established: 2004, contact: "Dr. Priya Raman", programmes: [{ name: "B.Tech Computer Science and Engineering", level: "UG", approvedIntake: 120, lastApprovedYear: "2026-27" }, { name: "B.Tech Electronics and Communication Engineering", level: "UG", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
+  { slug: "lakeview", code: "PRV-INST-1012", name: "Lakeview College of Engineering", category: "Engineering & Technology", state: "Maharashtra", city: "Nashik", established: 2009, contact: "Prof. Anil Deshmukh", programmes: [{ name: "B.Tech Civil Engineering", level: "UG", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
+  { slug: "meridian", code: "PRV-INST-1027", name: "Meridian Institute of Management", category: "Management", state: "Gujarat", city: "Vadodara", established: 2011, contact: "Dr. Kavita Shah", programmes: [{ name: "Master of Business Administration", level: "PG", approvedIntake: 120, lastApprovedYear: "2026-27" }] },
+  { slug: "coastal", code: "PRV-INST-1040", name: "Coastal Institute of Pharmacy", category: "Pharmacy", state: "Kerala", city: "Kozhikode", established: 2013, contact: "Dr. Thomas Varghese", programmes: [{ name: "Bachelor of Pharmacy", level: "UG", approvedIntake: 100, lastApprovedYear: "2026-27" }] },
+  { slug: "northfield", code: "PRV-INST-1055", name: "Northfield School of Architecture", category: "Architecture", state: "Punjab", city: "Ludhiana", established: 2015, contact: "Ar. Simran Gill", programmes: [{ name: "Bachelor of Architecture", level: "UG", approvedIntake: 40, lastApprovedYear: "2026-27" }] },
+  { slug: "riverside", code: "PRV-INST-1063", name: "Riverside Polytechnic Institute", category: "Engineering & Technology (Diploma)", state: "Odisha", city: "Cuttack", established: 2001, contact: "Sri. Bikash Mohanty", programmes: [{ name: "Diploma in Civil Engineering", level: "Diploma", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
+  { slug: "highland", code: "PRV-INST-1078", name: "Highland Institute of Technology", category: "Engineering & Technology", state: "Uttarakhand", city: "Dehradun", established: 2010, contact: "Dr. Neha Joshi", programmes: [{ name: "B.Tech Mechanical Engineering", level: "UG", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
+  { slug: "greenfield", code: "PRV-INST-1081", name: "Greenfield College of Engineering", category: "Engineering & Technology", state: "Tamil Nadu", city: "Coimbatore", established: 2017, contact: "Dr. S. Karthik", programmes: [{ name: "B.Tech Artificial Intelligence and Data Science", level: "UG", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
+  { slug: "valley", code: "PRV-INST-1094", name: "Valley Institute of Technology", category: "Engineering & Technology", state: "Telangana", city: "Warangal", established: 2008, contact: "Dr. Ravi Kumar", programmes: [{ name: "B.Tech Information Technology", level: "UG", approvedIntake: 60, lastApprovedYear: "2026-27" }] },
 ];
 
 export const STAFF = [
-  { email: "admin@aegis.demo", name: "Asha Verma", role: "ADMIN" as const, designation: "Rules & Systems Administrator" },
-  { email: "scrutiny@aegis.demo", name: "Vikram Iyer", role: "SCRUTINY_OFFICER" as const, designation: "Scrutiny & Verification Officer" },
-  { email: "senior@aegis.demo", name: "Dr. Arjun Menon", role: "SENIOR_OFFICIAL" as const, designation: "Competent Authority (Demo)" },
+  { email: "admin@pravah.demo", name: "Asha Verma", role: "ADMIN" as const, designation: "Rules & Systems Administrator" },
+  { email: "scrutiny@pravah.demo", name: "Vikram Iyer", role: "SCRUTINY_OFFICER" as const, designation: "Scrutiny & Verification Officer" },
+  { email: "senior@pravah.demo", name: "Dr. Arjun Menon", role: "SENIOR_OFFICIAL" as const, designation: "Competent Authority (Demo)" },
 ];
 
 // --- Issuers (fictional) ---------------------------------------------------
@@ -130,12 +130,12 @@ export const APPLICATIONS: DemoApplication[] = [
   },
   {
     slug: "coastal", scenario: "Cross-document mismatch",
-    explanation: "The affidavit states institution ID AEG-INST-1044 while the application states AEG-INST-1040, and the previous approval letter states an intake of 60 against 100 applied for. The NOC abbreviates the name (\"Coastal Inst. of Pharmacy\") — normalisation correctly treats that as consistent.",
+    explanation: "The affidavit states institution ID PRV-INST-1044 while the application states PRV-INST-1040, and the previous approval letter states an intake of 60 against 100 applied for. The NOC abbreviates the name (\"Coastal Inst. of Pharmacy\") — normalisation correctly treats that as consistent.",
     submittedAt: "2026-10-14T14:40:00Z",
     programmes: coastal.programmes.map((p) => ({ name: p.name, level: p.level, intake: p.approvedIntake })),
     documents: [
       prevApproval(coastal, "DRA/EOA/2026/1040", "B.Pharm", 60),
-      affidavit(coastal, "CIP/AFF/2027/011", {}, "AEG-INST-1044"),
+      affidavit(coastal, "CIP/AFF/2027/011", {}, "PRV-INST-1044"),
       fireNoc(coastal, "SFBA/NOC/2025/3940", "03/03/2025", "02/03/2028", { fields: [["Certificate No", "SFBA/NOC/2025/3940"], ["Name of the Institution", "Coastal Inst. of Pharmacy"], ["Issuing Authority", "Demo State Fire & Building Safety Authority"], ["Date of Issue", "03/03/2025"], ["Valid Until", "02/03/2028"]] }),
       faculty(coastal, 31), infra(coastal, "7,800"), fee(coastal, "DPL/TXN/2026/55040"),
     ],

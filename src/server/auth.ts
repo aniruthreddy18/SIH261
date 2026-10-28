@@ -9,7 +9,7 @@ import type { Role } from "@/lib/domain";
 import { prisma } from "./db";
 import { recordAudit } from "./audit";
 
-export const SESSION_COOKIE = "aegis_session";
+export const SESSION_COOKIE = "pravah_session";
 const ttlHours = () => Number(process.env.SESSION_TTL_HOURS ?? 12);
 
 const hashToken = (t: string) => crypto.createHash("sha256").update(t).digest("hex");

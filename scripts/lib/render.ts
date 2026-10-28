@@ -17,7 +17,7 @@ export interface DocSpec {
   format?: "pdf" | "png";
 }
 
-const DISCLAIMER = "SYNTHETIC DEMONSTRATION DOCUMENT — fictional data generated for the Aegis prototype. Not a real certificate.";
+const DISCLAIMER = "SYNTHETIC DEMONSTRATION DOCUMENT — fictional data generated for the Pravah AI prototype. Not a real certificate.";
 
 export function renderPdf(spec: DocSpec): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -28,8 +28,8 @@ export function renderPdf(spec: DocSpec): Promise<Buffer> {
       info: {
         Title: spec.title,
         Author: spec.issuer,
-        Producer: spec.producer ?? "Aegis Demo Document Generator",
-        Creator: spec.producer ?? "Aegis Demo Document Generator",
+        Producer: spec.producer ?? "Pravah AI Demo Document Generator",
+        Creator: spec.producer ?? "Pravah AI Demo Document Generator",
         CreationDate: created,
         ...(spec.modified ? { ModDate: new Date(spec.modified) } : { ModDate: created }),
       },

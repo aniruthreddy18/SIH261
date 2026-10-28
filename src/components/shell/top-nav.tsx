@@ -21,13 +21,13 @@ export function TopNav({ items, reviewCount }: { items: NavItem[]; reviewCount: 
         aria-current={active ? "page" : undefined}
         className={cn(
           "flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors",
-          active ? "bg-accent text-white shadow-sm" : "text-ink-2 hover:bg-accent-soft hover:text-accent",
+          active ? "bg-accent-fill text-white shadow-sm" : "text-ink-2 hover:bg-accent-soft hover:text-accent",
         )}
       >
         <Icon className="size-4 shrink-0" />
         {i.short ?? i.label}
         {i.href === "/review" && reviewCount > 0 && (
-          <span className={cn("rounded-full px-1.5 text-[11px] font-semibold tabular", active ? "bg-white/25 text-white" : "bg-saffron-bright text-white")}>{reviewCount}</span>
+          <span className={cn("rounded-full px-1.5 text-[11px] font-semibold tabular", active ? "bg-white/25 text-white" : "bg-saffron-bright text-navy-deep")}>{reviewCount}</span>
         )}
       </Link>
     );
@@ -39,7 +39,7 @@ export function TopNav({ items, reviewCount }: { items: NavItem[]; reviewCount: 
       {main.map(link)}
       {admin.length > 0 && <span className="mx-1.5 h-5 w-px shrink-0 bg-border-strong" aria-hidden />}
       {admin.map(link)}
-      <span className="ml-auto hidden shrink-0 rounded-full border border-border bg-white/60 px-2.5 py-0.5 text-[11px] text-muted xl:inline" title="All data is synthetic; issuer verification uses simulated sources.">
+      <span className="ml-auto hidden shrink-0 rounded-full border border-border bg-white/5 px-2.5 py-0.5 text-[11px] text-muted xl:inline" title="All data is synthetic; issuer verification uses simulated sources.">
         Demo environment · synthetic data
       </span>
     </nav>

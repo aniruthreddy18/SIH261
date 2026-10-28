@@ -85,7 +85,7 @@ const RULES: RuleSeed[] = [
   { code: "XDOC-AY-001", name: "Academic year consistent", category: "CONSISTENCY", description: "Affidavits and faculty statements must refer to the academic year applied for.", versions: [{ checkType: "CROSS_DOCUMENT_MATCH", definition: { field: "academicYear", documentCategories: ["AFFIDAVIT", "FACULTY_RECORD"] }, severity: "MEDIUM", effectiveFrom: EFFECTIVE, remediation: "Submit documents for the correct academic year.", changeNote: "Initial sample rule" }] },
   { code: "XDOC-PRG-001", name: "Programme listed in the application", category: "CONSISTENCY", description: "Programmes named on approval and accreditation documents must be programmes in the application.", versions: [{ checkType: "CROSS_DOCUMENT_MATCH", definition: { field: "programmeName", documentCategories: ["PREVIOUS_APPROVAL", "ACCREDITATION"] }, severity: "MEDIUM", effectiveFrom: EFFECTIVE, remediation: "Ensure the programme matches the application.", changeNote: "Initial sample rule" }] },
   { code: "XDOC-INT-001", name: "Approved intake matches application", category: "CONSISTENCY", description: "The intake on the previous approval letter must equal the intake applied for (extension, not increase).", versions: [{ checkType: "CROSS_DOCUMENT_MATCH", definition: { field: "approvedIntake", documentCategories: ["PREVIOUS_APPROVAL"] }, severity: "HIGH", effectiveFrom: EFFECTIVE, remediation: "Apply for the previously approved intake, or use the appropriate application type for an intake change.", changeNote: "Initial sample rule" }] },
-  { code: "REC-ID-001", name: "Application matches institutional record", category: "RECORDS", description: "Institution name and identifier in the application must match the institutional record held in Aegis.", versions: [{ checkType: "RECORD_MATCH", definition: { aspect: "INSTITUTION_IDENTITY" }, severity: "HIGH", effectiveFrom: EFFECTIVE, remediation: "Correct the application details or update the institutional record through the authorised process.", changeNote: "Initial sample rule" }] },
+  { code: "REC-ID-001", name: "Application matches institutional record", category: "RECORDS", description: "Institution name and identifier in the application must match the institutional record held in Pravah AI.", versions: [{ checkType: "RECORD_MATCH", definition: { aspect: "INSTITUTION_IDENTITY" }, severity: "HIGH", effectiveFrom: EFFECTIVE, remediation: "Correct the application details or update the institutional record through the authorised process.", changeNote: "Initial sample rule" }] },
   { code: "REC-INT-001", name: "Intake within institutional record", category: "RECORDS", description: "Intake applied for must not exceed the approved intake in the institutional record.", versions: [{ checkType: "RECORD_MATCH", definition: { aspect: "PROGRAMME_INTAKE" }, severity: "HIGH", effectiveFrom: EFFECTIVE, remediation: "Apply within the approved intake.", changeNote: "Initial sample rule" }] },
   { code: "DUP-FILE-001", name: "Distinct evidence per document", category: "DUPLICATE", description: "The same file should not be submitted for more than one checklist item.", versions: [{ checkType: "DUPLICATE_FILE", definition: { outcome: "REVIEW_REQUIRED" }, severity: "MEDIUM", effectiveFrom: EFFECTIVE, remediation: "Upload the correct, distinct document for each checklist item.", changeNote: "Initial sample rule" }] },
   { code: "DUP-REF-001", name: "Reference numbers not repeated", category: "DUPLICATE", description: "A reference number should appear on only one document within the application.", versions: [{ checkType: "DUPLICATE_REFERENCE", definition: { documentCategories: [], outcome: "REVIEW_REQUIRED" }, severity: "MEDIUM", effectiveFrom: EFFECTIVE, remediation: "Check the documents and submit the correct versions.", changeNote: "Initial sample rule" }] },
@@ -131,13 +131,13 @@ async function main() {
   }
   for (const c of COMPLIANCE) {
     await prisma.complianceRequirement.create({
-      data: { code: c.code, name: c.name, area: c.area, description: c.description, appliesToJson: JSON.stringify(c.optional ? [] : []), evidenceCategoriesJson: JSON.stringify(c.evidence), linkedRuleCodesJson: JSON.stringify(c.rules), ruleSource: "Sample requirement configured for the Aegis demo. No authoritative regulation has been configured.", sourceReference: null, isSample: true, remediation: "See linked rule guidance.", effectiveFrom: new Date(`${EFFECTIVE}T00:00:00Z`) },
+      data: { code: c.code, name: c.name, area: c.area, description: c.description, appliesToJson: JSON.stringify(c.optional ? [] : []), evidenceCategoriesJson: JSON.stringify(c.evidence), linkedRuleCodesJson: JSON.stringify(c.rules), ruleSource: "Sample requirement configured for the Pravah AI demo. No authoritative regulation has been configured.", sourceReference: null, isSample: true, remediation: "See linked rule guidance.", effectiveFrom: new Date(`${EFFECTIVE}T00:00:00Z`) },
     });
   }
   await prisma.issuerSource.createMany({
     data: [
       { id: "synthetic-demo-issuer", name: "Synthetic Demo Issuer Registry", sourceType: "SIMULATED", description: "Fictional records for fire-safety NOCs, accreditation certificates and fee receipts. Responses are simulated and are not from any real authority.", categoriesJson: JSON.stringify(["NOC_PERMISSION", "ACCREDITATION", "FEE_RECEIPT"]), configJson: JSON.stringify({ latencyMs: 120 }) },
-      { id: "demo-institution-registry", name: "Demo Institutional Records Registry", sourceType: "SIMULATED", description: "Compares previous-approval letters with the synthetic institutional records seeded in Aegis. Not an AICTE system.", categoriesJson: JSON.stringify(["PREVIOUS_APPROVAL"]) },
+      { id: "demo-institution-registry", name: "Demo Institutional Records Registry", sourceType: "SIMULATED", description: "Compares previous-approval letters with the synthetic institutional records seeded in Pravah AI. Not an AICTE system.", categoriesJson: JSON.stringify(["PREVIOUS_APPROVAL"]) },
       { id: "official-provider", name: "Official verification provider", sourceType: "SANDBOX", description: "Placeholder adapter for an authorised issuing-authority API. Inactive until OFFICIAL_ISSUER_* environment variables are configured.", categoriesJson: JSON.stringify([]), enabled: true },
     ],
   });
@@ -157,7 +157,7 @@ async function main() {
     actors.set(s.role, toActor(u));
   }
   for (const i of INSTITUTIONS) {
-    const u = await prisma.user.create({ data: { email: `applicant.${i.slug}@aegis.demo`, name: i.contact, role: "APPLICANT", designation: `Authorised contact, ${i.name}`, institutionId: instIds.get(i.slug)!, passwordHash: await hashPassword(DEMO_PASSWORD) } });
+    const u = await prisma.user.create({ data: { email: `applicant.${i.slug}@pravah.demo`, name: i.contact, role: "APPLICANT", designation: `Authorised contact, ${i.name}`, institutionId: instIds.get(i.slug)!, passwordHash: await hashPassword(DEMO_PASSWORD) } });
     actors.set(`applicant:${i.slug}`, toActor(u));
   }
   const scrutiny = actors.get("SCRUTINY_OFFICER")!;
@@ -175,7 +175,7 @@ async function main() {
       institutionCategory: i.category,
       academicYear: ACADEMIC_YEAR,
       contactName: i.contact,
-      contactEmail: `applicant.${i.slug}@aegis.demo`,
+      contactEmail: `applicant.${i.slug}@pravah.demo`,
       programmes: spec.programmes,
     }, { createdAt: new Date(spec.submittedAt) });
     const rendered = new Map<string, Buffer>();

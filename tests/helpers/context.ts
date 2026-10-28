@@ -24,10 +24,10 @@ export function doc(categoryCode: string, fields: FieldValue[], over: Partial<Do
 export function context(over: Partial<ApplicationContext> = {}): ApplicationContext {
   return {
     applicationId: "app-1",
-    reference: "AEG-2027-000001",
+    reference: "PRV-2027-000001",
     templateCode: "EOA",
     institutionName: "Sunrise Institute of Technology",
-    institutionCode: "AEG-INST-1001",
+    institutionCode: "PRV-INST-1001",
     academicYear: "2027-28",
     programmes: [{ name: "B.Tech Computer Science and Engineering", level: "UG", intake: 120 }],
     checklist: [
@@ -37,7 +37,7 @@ export function context(over: Partial<ApplicationContext> = {}): ApplicationCont
     ],
     documents: [],
     institutionRecord: {
-      code: "AEG-INST-1001",
+      code: "PRV-INST-1001",
       name: "Sunrise Institute of Technology",
       programmes: [{ name: "B.Tech Computer Science and Engineering", level: "UG", approvedIntake: 120, lastApprovedYear: "2026-27" }],
     },

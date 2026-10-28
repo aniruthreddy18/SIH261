@@ -42,7 +42,7 @@ describe("normalisation", () => {
     expect(compareValues("name", "Sunrise Institute of Technology", "Meridian College of Pharmacy").outcome).toBe("DIFFERENT");
   });
   it("normalises identifiers and academic years", () => {
-    expect(normalizeIdentifier("aeg-inst 1001")).toBe("AEGINST1001");
+    expect(normalizeIdentifier("prv-inst 1001")).toBe("PRVINST1001");
     expect(normalizeAcademicYear("2027-28")).toBe("2027-2028");
     expect(normalizeAcademicYear("2027/2028")).toBe("2027-2028");
     expect(normalizeAcademicYear("2027-29")).toBeNull();

@@ -1,9 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 
-const g = globalThis as unknown as { __aegisPrisma?: PrismaClient };
+const g = globalThis as unknown as { __pravahPrisma?: PrismaClient };
 
-export const prisma = g.__aegisPrisma ?? new PrismaClient({ log: ["error"] });
-if (process.env.NODE_ENV !== "production") g.__aegisPrisma = prisma;
+export const prisma = g.__pravahPrisma ?? new PrismaClient({ log: ["error"] });
+if (process.env.NODE_ENV !== "production") g.__pravahPrisma = prisma;
 
 export type Tx = Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends">;
 

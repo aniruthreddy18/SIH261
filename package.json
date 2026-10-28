@@ -1,8 +1,8 @@
 {
-  "name": "aegis-sih-26261",
+  "name": "pravah-ai-sih-26261",
   "version": "0.1.0",
   "private": true,
-  "description": "Aegis \u2014 Application Validation & Compliance Intelligence (SIH 2026 PS 26261 prototype)",
+  "description": "Pravah AI \u2014 Application Validation & Compliance Intelligence (SIH 2026 PS 26261 prototype)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

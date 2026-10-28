@@ -19,7 +19,7 @@ export async function transitionStatus(
   if (!canTransition(from, to)) throw new DomainError(`Invalid status transition: ${from} → ${to}.`);
   const updated = await tx.application.updateMany({ where: { id: applicationId, status: from }, data: { status: to } });
   if (updated.count !== 1) throw new DomainError("The application was modified concurrently. Reload and try again.");
-  const label = by.actor ? by.actor.name : by.label ?? "system:aegis";
+  const label = by.actor ? by.actor.name : by.label ?? "system:pravah";
   await tx.statusChange.create({ data: { applicationId, fromStatus: from, toStatus: to, actorId: by.actor?.userId ?? null, actorLabel: label, reason: by.reason ?? null } });
   await recordAudit(
     { actor: by.actor ?? { label: label, role: "SYSTEM" }, eventType: "APPLICATION_STATUS_CHANGED", action: `Status changed ${from} → ${to}`, applicationId, before: { status: from }, after: { status: to }, reason: by.reason, correlationId: by.correlationId },
@@ -52,7 +52,7 @@ async function nextReference(tx: Tx, academicYear: string): Promise<string> {
   const year = academicYear.slice(0, 4);
   const name = `application:${year}`;
   const c = await tx.counter.upsert({ where: { name }, create: { name, value: 1 }, update: { value: { increment: 1 } } });
-  return `AEG-${year}-${String(c.value).padStart(6, "0")}`;
+  return `PRV-${year}-${String(c.value).padStart(6, "0")}`;
 }
 
 export const CreateApplicationSchema = z.object({
