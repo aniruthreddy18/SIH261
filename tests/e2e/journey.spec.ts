@@ -16,6 +16,18 @@ async function signIn(page: Page, email: string) {
   await Promise.all([page.waitForURL((u) => !u.pathname.includes("login")), page.click("button[type=submit]")]);
 }
 
+/**
+ * Headless Chromium renders the frosted-glass backdrop blur in software, which keeps a CPU core
+ * busy and starves the app server on small machines (uploads then take a minute instead of
+ * seconds). The blur is purely visual, so the tests switch it off.
+ */
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const css = "*,*::before,*::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}";
+    document.addEventListener("DOMContentLoaded", () => document.head.append(Object.assign(document.createElement("style"), { textContent: css })));
+  });
+});
+
 async function appId(name: string) {
   return (await db.application.findFirstOrThrow({ where: { institutionName: { contains: name } } })).id;
 }
@@ -33,8 +45,8 @@ async function openDialog(page: Page, trigger: Locator): Promise<Locator> {
   return dialog;
 }
 
-async function expectToast(page: Page, text: string | RegExp) {
-  await expect(page.locator("[data-sonner-toast]").filter({ hasText: text }).first()).toBeVisible({ timeout: 90_000 });
+async function expectToast(page: Page, text: string | RegExp, timeout = 90_000) {
+  await expect(page.locator("[data-sonner-toast]").filter({ hasText: text }).first()).toBeVisible({ timeout });
 }
 
 test.afterAll(async () => db.$disconnect());
@@ -94,7 +106,15 @@ test("enforces role permissions and cross-institution isolation on the server", 
 test("rejects a renamed non-PDF upload with a clear message", async ({ page }) => {
   await signIn(page, "applicant.greenfield@pravah.demo");
   await page.goto(`/portal/applications/${await appId("Greenfield")}?view=documents`);
-  await page.getByTestId("upload-input").first().setInputFiles(sample("invalid-renamed-file.pdf"));
+  // Re-select the file until the hydrated form has registered it (the button enables). A selection
+  // made before hydration is lost, and Chromium fires no change event for an identical file list,
+  // so clear the input before each attempt.
+  const input = page.getByTestId("upload-input").first();
+  await expect(async () => {
+    await input.setInputFiles([]);
+    await input.setInputFiles(sample("invalid-renamed-file.pdf"));
+    await expect(page.getByTestId("upload-submit").first()).toBeEnabled({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
   await page.getByTestId("upload-submit").first().click();
   await expect(page.getByRole("alert").filter({ hasText: "does not match its .pdf extension" })).toBeVisible();
 });
@@ -123,7 +143,7 @@ test("full journey: findings → rectification → revalidation → verification
   await dialog.getByTestId("upload-input").setInputFiles(sample("meridian-fire-noc-renewed.pdf"));
   await dialog.locator("#replace-reason").fill("Renewed fire NOC issued in October 2026");
   await dialog.getByTestId("upload-submit").click();
-  await expect(dialog.getByText("Uploaded and processed")).toBeVisible({ timeout: 90_000 });
+  await expectToast(page, "Uploaded and processed"); // the dialog closes itself once the slot refreshes
   await page.keyboard.press("Escape");
   await openDialog(page, page.getByRole("button", { name: "Submit corrections and revalidate" }));
   await page.getByRole("dialog").locator("textarea").fill("Renewed NOC uploaded as requested.");
@@ -188,7 +208,7 @@ test("upload to closing: an institution completes its draft and it is checked, v
     const dialog = page.getByRole("dialog");
     await dialog.getByTestId("upload-input").setInputFiles(sample(file));
     await dialog.getByTestId("upload-submit").click();
-    await expect(dialog.getByText("Uploaded and processed")).toBeVisible({ timeout: 90_000 });
+    await expectToast(page, "Uploaded and processed"); // the dialog closes itself once the slot refreshes
   }
   await page.goto(`/portal/applications/${id}`);
   await page.getByRole("button", { name: "Run checks" }).click();
@@ -236,9 +256,13 @@ test("issuer mismatch: resolving the finding is not enough; a manual confirmatio
   await page.getByRole("dialog").locator("textarea").fill("Reviewed against the submitted certificate; to be confirmed with the registry.");
   await page.getByRole("dialog").getByRole("button", { name: "Resolve" }).click();
   await expectToast(page, /resolved|recorded/i);
+  // Resolving already reconciles the status, so wait for a new completed run, not for a status.
+  const runs = async () => db.validationRun.count({ where: { applicationId: id, status: "COMPLETED" } });
+  const before = await runs();
   await page.goto(`/applications/${id}`);
   await page.getByRole("button", { name: "Run validation" }).first().click();
-  await expect.poll(status, { timeout: 60_000 }).toBe("AUTO_PASSED");
+  await expect.poll(runs, { timeout: 60_000 }).toBeGreaterThan(before);
+  expect(await status()).toBe("AUTO_PASSED");
 
   // 2. Forwarding stays blocked, and the page says why and where to fix it.
   await page.goto(`/applications/${id}`);
@@ -246,7 +270,8 @@ test("issuer mismatch: resolving the finding is not enough; a manual confirmatio
   await expect(page.getByRole("button", { name: "Forward for authorised review" })).toBeDisabled();
 
   // 3. A manual confirmation with a reference clears it.
-  await page.getByRole("link", { name: "Open issuer verification" }).first().click();
+  await expect(page.getByRole("link", { name: "Open issuer verification" }).first()).toHaveAttribute("href", /tab=verification/);
+  await page.goto(`/applications/${id}?tab=verification`);
   const acc = page.locator("div").filter({ has: page.getByRole("heading", { name: /^Accreditation \/ Certification/ }) }).filter({ has: page.getByRole("button", { name: "Manual confirmation" }) }).last();
   await openDialog(page, acc.getByRole("button", { name: "Manual confirmation" }));
   const m = page.getByRole("dialog");
@@ -290,7 +315,7 @@ test("local AI suggests fields from a prose certificate; rules wait for an offic
   const dialog = page.getByRole("dialog");
   await dialog.getByTestId("upload-input").setInputFiles(sample("ai-demo-noc-prose.pdf"));
   await dialog.getByTestId("upload-submit").click();
-  await expect(dialog.getByText("Uploaded and processed")).toBeVisible({ timeout: 120_000 });
+  await expectToast(page, "Uploaded and processed", 120_000);
   const noc = await db.document.findFirstOrThrow({ where: { applicationId: id, categoryCode: "NOC_PERMISSION", state: "ACTIVE" } });
   const validityResult = async () => {
     const run = await db.validationRun.findFirstOrThrow({ where: { applicationId: id }, orderBy: { runNumber: "desc" }, include: { results: true } });

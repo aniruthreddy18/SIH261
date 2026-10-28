@@ -103,6 +103,19 @@ const COMPLIANCE = [
   { code: "CMP-REC-01", name: "Consistency with institutional records", area: "Records", description: "Application details, previous approval and intake consistent with institutional records.", evidence: ["PREVIOUS_APPROVAL"], rules: ["REC-ID-001", "REC-INT-001", "XDOC-INT-001", "XDOC-NAME-001"] },
 ];
 
+/**
+ * Dataset size. The default compact demo has three applications that cover the main stories:
+ *   Meridian   — expired certificate → findings with evidence → rectification → revalidation
+ *   Northfield — issuer verification mismatch → manual confirmation → forward
+ *   Greenfield — draft → upload → checks → verification → forward → decision (and the AI demo)
+ * DEMO_DATASET=full seeds all nine scenarios; the automated tests use it for broader coverage.
+ */
+const COMPACT = ["meridian", "northfield", "greenfield"];
+const FULL = process.env.DEMO_DATASET === "full";
+const institutions = FULL ? INSTITUTIONS : INSTITUTIONS.filter((i) => COMPACT.includes(i.slug));
+const applications = FULL ? APPLICATIONS : APPLICATIONS.filter((a) => COMPACT.includes(a.slug));
+const issuerRecords = ISSUER_RECORDS.filter((r) => institutions.some((i) => i.code === r.institutionCode));
+
 async function main() {
   // The seeded demo must be identical on every machine, whether or not the optional local AI
   // model is installed, so the AI fallback only applies to live uploads.
@@ -141,13 +154,13 @@ async function main() {
       { id: "official-provider", name: "Official verification provider", sourceType: "SANDBOX", description: "Placeholder adapter for an authorised issuing-authority API. Inactive until OFFICIAL_ISSUER_* environment variables are configured.", categoriesJson: JSON.stringify([]), enabled: true },
     ],
   });
-  for (const r of ISSUER_RECORDS) {
+  for (const r of issuerRecords) {
     await prisma.syntheticIssuerRecord.create({ data: { referenceNumber: r.referenceNumber, categoryCode: r.categoryCode, issuerName: r.issuerName, institutionName: r.institutionName, institutionCode: r.institutionCode, issueDate: r.issueDate, expiryDate: r.expiryDate, behaviour: r.behaviour, note: (r as { note?: string }).note ?? null } });
   }
 
   console.log("Seeding institutions and users…");
   const instIds = new Map<string, string>();
-  for (const i of INSTITUTIONS) {
+  for (const i of institutions) {
     const created = await prisma.institution.create({ data: { code: i.code, name: i.name, category: i.category, state: i.state, city: i.city, establishedYear: i.established, programmes: { create: i.programmes } } });
     instIds.set(i.slug, created.id);
   }
@@ -156,15 +169,16 @@ async function main() {
     const u = await prisma.user.create({ data: { email: s.email, name: s.name, role: s.role, designation: s.designation, passwordHash: await hashPassword(DEMO_PASSWORD) } });
     actors.set(s.role, toActor(u));
   }
-  for (const i of INSTITUTIONS) {
+  for (const i of institutions) {
     const u = await prisma.user.create({ data: { email: `applicant.${i.slug}@pravah.demo`, name: i.contact, role: "APPLICANT", designation: `Authorised contact, ${i.name}`, institutionId: instIds.get(i.slug)!, passwordHash: await hashPassword(DEMO_PASSWORD) } });
     actors.set(`applicant:${i.slug}`, toActor(u));
   }
   const scrutiny = actors.get("SCRUTINY_OFFICER")!;
   const verifier = scrutiny;
 
-  for (const spec of APPLICATIONS) {
-    const i = INSTITUTIONS.find((x) => x.slug === spec.slug)!;
+  console.log(`Seeding ${FULL ? "the full" : "the compact"} demo dataset (${applications.length} applications)…`);
+  for (const spec of applications) {
+    const i = institutions.find((x) => x.slug === spec.slug)!;
     const applicant = actors.get(`applicant:${i.slug}`)!;
     process.stdout.write(`• ${spec.scenario.padEnd(32)} ${i.name} … `);
     const app = await createApplication(applicant, {

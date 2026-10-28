@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { CheckCircle2, FileUp, ListChecks, RotateCcw } from "lucide-react";
 import { getActor } from "@/server/session";
+import { prisma } from "@/server/db";
 import { BrandMark } from "@/components/brand";
 import { LoginForm } from "@/app/login/login-form";
 import { PortalSwitch } from "@/app/login/portal-switch";
@@ -32,6 +33,9 @@ export default async function InstitutionLoginPage({ searchParams }: { searchPar
   if (actor) redirect(actor.role === "APPLICANT" ? "/portal" : "/");
   const { next } = await searchParams;
   const demo = process.env.DEMO_MODE !== "false";
+  // Only list demo institutions that exist in this database (the compact demo seeds three).
+  const existing = demo ? new Set((await prisma.user.findMany({ where: { role: "APPLICANT", active: true }, select: { email: true } })).map((u) => u.email)) : new Set<string>();
+  const demoInstitutions = DEMO_INSTITUTIONS.filter((a) => existing.has(a.email));
   return (
     <div className="theme-green flex min-h-screen flex-col items-center gap-6 px-4 py-6 lg:flex-row lg:items-center lg:justify-center lg:gap-10 lg:px-10">
       <div className="app-backdrop app-backdrop-vivid" aria-hidden />
@@ -67,14 +71,14 @@ export default async function InstitutionLoginPage({ searchParams }: { searchPar
         <h2 className="mt-6 text-lg font-semibold text-ink">Institution login</h2>
         <p className="mt-1 text-xs text-muted">Sign in with your institution&rsquo;s authorised account. You will only see your own institution&rsquo;s applications.</p>
         <LoginForm next={next ?? "/portal"} portal="INSTITUTION" />
-        {demo && (
+        {demo && demoInstitutions.length > 0 && (
           <div className="mt-8 rounded-lg border border-border bg-surface">
             <div className="border-b border-border px-4 py-2.5">
               <p className="text-xs font-semibold text-ink">Demo institution accounts</p>
               <p className="text-[11px] text-muted">Password for all: <code className="rounded bg-subtle px-1 font-mono">Pravah@Demo2026</code>. Selecting one fills the form.</p>
             </div>
             <ul className="max-h-80 divide-y divide-border overflow-y-auto">
-              {DEMO_INSTITUTIONS.map((a) => (
+              {demoInstitutions.map((a) => (
                 <li key={a.email}>
                   <button type="button" data-demo-email={a.email} className="demo-fill flex w-full items-start gap-3 px-4 py-2 text-left hover:bg-subtle">
                     <span className="mt-1 size-2.5 shrink-0 rounded-full bg-green" aria-hidden />

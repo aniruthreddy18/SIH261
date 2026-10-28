@@ -7,7 +7,7 @@ export default function setup() {
   const root = path.resolve(__dirname, "../..");
   for (const f of ["prisma/test-integration.db", "prisma/test-integration.db-journal"]) fs.rmSync(path.join(root, f), { force: true });
   fs.rmSync(path.join(root, "storage-test"), { recursive: true, force: true });
-  const env = { ...process.env, DATABASE_URL: "file:./test-integration.db", STORAGE_DIR: "./storage-test" };
+  const env = { ...process.env, DATABASE_URL: "file:./test-integration.db", STORAGE_DIR: "./storage-test", DEMO_DATASET: "full" };
   execSync("npx prisma migrate deploy", { cwd: root, env, stdio: "pipe" });
   execSync("npx tsx scripts/seed.ts", { cwd: root, env, stdio: "pipe" });
 }

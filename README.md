@@ -113,7 +113,7 @@ Password for every account: **`Pravah@Demo2026`** (stored as scrypt hashes; each
 
 One officer role handles both scrutiny and issuer verification: the system checks every document automatically, and the officer only reviews the exceptions it cannot decide. Separation of duties is kept between the institution (submits), the officer (checks and forwards), the senior official (decides) and the administrator (configures).
 
-Applicant slugs: `sunrise`, `lakeview`, `meridian`, `coastal`, `northfield`, `riverside`, `highland`, `greenfield`, `valley`. Each applicant can only see their own institution's records.
+Institution accounts in the compact demo: `applicant.meridian@pravah.demo`, `applicant.northfield@pravah.demo` and `applicant.greenfield@pravah.demo`. Each can only see its own institution's records.
 
 ### Institution Portal
 
@@ -132,21 +132,17 @@ Institution users who open an official-area link (for example from an old notifi
 
 ## Demo scenarios
 
-The seed builds every application **through the real pipeline** (rendered synthetic PDFs/PNG → upload → extraction/OCR → rules → anomaly analysis → simulated verification → workflow), so results are reproducible after `npm run db:reset`.
+The seed builds every application **through the real pipeline** (rendered synthetic PDFs → upload → extraction/OCR → rules → anomaly analysis → simulated verification → workflow), so results are reproducible after `npm run db:reset`. The default **compact demo** has three applications, one per main story:
 
-| Ref | Institution (fictional) | Scenario | Seeded status | Why |
+| Ref | Institution (fictional) | Story | Seeded status | What to do with it |
 |---|---|---|---|---|
-| PRV-2027-000001 | Sunrise Institute of Technology | Clean application | Automated checks passed | All evidence present, consistent and verified by simulated sources |
-| PRV-2027-000002 | Lakeview College of Engineering | Missing document | Rectification required | Fire NOC (mandatory) not submitted; officer returned the application |
-| PRV-2027-000003 | Meridian Institute of Management | Expired certificate | Automated checks failed | NOC valid until 31/03/2027 does not cover AY 2027-28 start (01/07/2027) — demo rule `DATE-VAL-001` v2 |
-| PRV-2027-000004 | Coastal Institute of Pharmacy | Cross-document mismatch | Automated checks failed | Affidavit ID `PRV-INST-1044` ≠ `PRV-INST-1040`; previous-approval intake 60 ≠ 100. The abbreviated name "Coastal Inst. of Pharmacy" is correctly treated as consistent |
-| PRV-2027-000005 | Northfield School of Architecture | Issuer mismatch | Review required | Simulated registry validity (09/01/2028) ≠ certificate (09/01/2031) |
-| PRV-2027-000006 | Riverside Polytechnic Institute | Manual review | Review required | Scanned NOC (OCR); issuer pending; accreditation source unavailable; fee receipt not found |
-| PRV-2027-000007 | Highland Institute of Technology | Duplicate & suspicious metadata | Review required | Same file used for two checklist items; receipt reuses another institution's reference; PDF metadata indicators |
-| PRV-2027-000008 | Greenfield College of Engineering | Awaiting validation | Draft | Documents processed, validation not yet run |
-| PRV-2027-000009 | Valley Institute of Technology | Ready for authorised review | Ready for authorised review | Clean, verified and forwarded by the scrutiny officer |
+| PRV-2027-000001 | Meridian Institute of Management | Expired certificate | Automated checks failed | NOC valid until 31/03/2027 does not cover the AY 2027-28 start (01/07/2027): demo rule `DATE-VAL-001` v2. Return it for rectification; the institution uploads `samples/meridian-fire-noc-renewed.pdf`; revalidation passes; verify, forward, decide |
+| PRV-2027-000002 | Northfield School of Architecture | Issuer mismatch | Review required | The simulated registry's validity (09/01/2028) differs from the certificate (09/01/2031). Review the finding, then record a **manual confirmation** on Issuer verification before forwarding |
+| PRV-2027-000003 | Greenfield College of Engineering | Draft | Draft | The institution uploads `greenfield-faculty-statement.pdf` and `greenfield-built-up-area.pdf`, runs the checks (all pass), then officer → issuer verification → forward → senior official → closed |
 
-Files for live uploads are in [`samples/`](samples/): `meridian-fire-noc-renewed.pdf` (fixes PRV-…003), `lakeview-fire-noc.pdf` (fixes PRV-…002), `coastal-affidavit-corrected.pdf`, `scanned-noc-sample.png` (OCR), `greenfield-*.pdf` (complete the draft), and `invalid-renamed-file.pdf` (a text file renamed to `.pdf`, which is rejected).
+`DEMO_DATASET=full npm run db:reset` seeds six more scenarios: a clean application, a missing document, a cross-document mismatch, a scanned (OCR) NOC with pending/unavailable sources, duplicate and suspicious-metadata indicators, and an application ready for authorised review. The automated tests always use the full dataset.
+
+Files for live uploads are in [`samples/`](samples/): `meridian-fire-noc-renewed.pdf`, `greenfield-*.pdf`, `ai-demo-noc-prose.pdf` (AI extraction demo), `scanned-noc-sample.png` (OCR), and `invalid-renamed-file.pdf` (a text file renamed to `.pdf`, which is rejected).
 
 ## Architecture
 
