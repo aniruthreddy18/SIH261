@@ -225,7 +225,9 @@ function findLabelled(def: FieldDefinition, pages: PageText[]): Candidate | null
   return null;
 }
 
-const INSTITUTION_HEURISTIC = /\b([A-Z][A-Za-z.&'\- ]{2,80}?\b(?:Institute|College|University|Polytechnic|School|Academy)\b(?:\s+of\s+[A-Z][A-Za-z&\- ]{2,60})?)/;
+// Only the run of Capitalised words before the keyword, so a sentence such as "This is to certify
+// that the campus of Greenfield College of Engineering" yields "Greenfield College of Engineering".
+const INSTITUTION_HEURISTIC = /\b((?:[A-Z][A-Za-z.&'\-]*\s+){1,6}(?:Institute|College|University|Polytechnic|School|Academy)\b(?:\s+of\s+[A-Z][A-Za-z&\-]*(?:\s+(?:and\s+)?[A-Z][A-Za-z&\-]*)*)?)/;
 
 function findHeuristic(def: FieldDefinition, pages: PageText[], meta: Record<string, unknown>): Candidate | null {
   if (def.key === "institutionName") {
@@ -307,7 +309,13 @@ export function extractFields(
       method: candidate.method,
     });
   }
-  const missing = fields.filter((f) => f.method === "NOT_FOUND").map((f) => f.label);
-  if (missing.length) warnings.push(`Expected field(s) not located: ${missing.join(", ")}.`);
+  const notLocated = notLocatedWarning(fields);
+  if (notLocated) warnings.push(notLocated);
   return { fields, warnings };
+}
+
+/** Warning listing the expected fields that were not located (null when all were found). */
+export function notLocatedWarning(fields: ExtractedFieldDraft[]): string | null {
+  const missing = fields.filter((f) => f.method === "NOT_FOUND").map((f) => f.label);
+  return missing.length ? `Expected field(s) not located: ${missing.join(", ")}.` : null;
 }

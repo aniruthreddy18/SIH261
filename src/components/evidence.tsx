@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FileText, Database, ClipboardList, Building2, Fingerprint, Radio, FileSearch } from "lucide-react";
+import { methodLabel } from "@/lib/extraction/methods";
 import type { Evidence } from "@/lib/validation/types";
 
 const ICON = { FIELD: FileSearch, DOCUMENT: FileText, APPLICATION: ClipboardList, RECORD: Database, CHECKLIST: ClipboardList, OTHER_APPLICATION: Building2, METADATA: Fingerprint, SOURCE: Radio };
@@ -32,7 +33,7 @@ export function EvidenceList({ items, canSeeOtherApplications }: { items: Eviden
                   {e.documentId ? <Link href={`/documents/${e.documentId}${e.page ? `?page=${e.page}` : ""}`} className="text-accent hover:underline">{e.fileName ?? "document"}</Link> : e.fileName}
                   {e.page ? ` · page ${e.page}` : ""}
                   {e.confidence !== undefined ? ` · confidence ${Math.round(e.confidence * 100)}%` : ""}
-                  {e.method ? ` · ${e.method.replace(/_/g, " ").toLowerCase()}` : ""}
+                  {e.method ? ` · ${methodLabel(e.method)}` : ""}
                 </div>
               )}
               {e.excerpt && <div className="mt-1 rounded bg-surface px-1.5 py-1 font-mono text-[11px] text-ink-2">“{e.excerpt}”</div>}

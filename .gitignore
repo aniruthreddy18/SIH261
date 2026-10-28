@@ -20,3 +20,6 @@ storage-test/
 storage-e2e/
 prisma/e2e.db*
 .next-e2e/
+
+# optional local AI model (downloaded by `npm run ai:setup`, ~119 MB)
+models/

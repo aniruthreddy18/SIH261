@@ -14,7 +14,7 @@ export interface ReportData {
   app: { reference: string; institutionName: string; institutionCode: string | null; category: string; template: string; academicYear: string; status: string; statusLabel: string; contact: string; submittedAt: string; programmes: { name: string; level: string; intake: number }[] };
   institutionRecord: { code: string; name: string; state: string; city: string };
   checklist: { label: string; mandatory: boolean; documents: string[] }[];
-  documents: { category: string; file: string; version: number; sha256: string; method: string | null; pages: number | null; ocrConfidence: number | null; status: string; fields: { label: string; value: string | null; confidence: number; page: number | null; corrected: boolean }[] }[];
+  documents: { category: string; file: string; version: number; sha256: string; method: string | null; pages: number | null; ocrConfidence: number | null; status: string; fields: { label: string; value: string | null; confidence: number; page: number | null; corrected: boolean; aiSuggestion: boolean }[] }[];
   lastRun: { runNumber: number; completedAt: string | null; machineOutcome: string | null; summary: Record<string, number>; ruleVersions: { code: string; version: number }[] } | null;
   results: { ruleCode: string; version: number; status: string; subject: string; explanation: string; expected: string | null; observed: string | null; evidence: string[] }[];
   findings: { title: string; type: string; source: string; severity: string; status: string; outcomeClass: string; deterministic: boolean; recommendedAction: string; resolution: string | null }[];
@@ -57,7 +57,7 @@ export async function buildReportData(actor: Actor, applicationId: string): Prom
       const v = d.versions[0];
       return {
         category: d.category.name, file: v.originalName, version: v.versionNo, sha256: v.sha256, method: v.extractionMethod, pages: v.pageCount, ocrConfidence: v.ocrConfidence, status: v.processingStatus,
-        fields: v.fields.map((f) => ({ label: fieldLabel(f.key), value: f.correctedValue ?? f.value, confidence: f.correctedValue ? 1 : f.confidence, page: f.page, corrected: f.correctedValue !== null })),
+        fields: v.fields.map((f) => ({ label: fieldLabel(f.key), value: f.correctedValue ?? f.value, confidence: f.correctedValue ? 1 : f.confidence, page: f.page, corrected: f.correctedValue !== null, aiSuggestion: f.method.startsWith("AI_") && f.correctedValue === null })),
       };
     }),
     lastRun: lastRun ? { runNumber: lastRun.runNumber, completedAt: lastRun.completedAt?.toISOString() ?? null, machineOutcome: lastRun.machineOutcome, summary: json(lastRun.summaryJson, {}), ruleVersions: json<{ code: string; version: number }[]>(lastRun.ruleVersionsJson, []) } : null,

@@ -66,8 +66,11 @@ Navigation is a horizontal top bar: a gradient header in the role's colour (bran
 npm install            # .npmrc sets legacy-peer-deps (works around an npm peer-resolution bug)
 cp .env.example .env   # defaults work as-is for the local demo
 npm run db:reset       # create the local SQLite DB, apply migrations, seed the demo dataset (~15 s)
+npm run ai:setup       # optional, once: download the local AI model (~119 MB, checksum-verified)
 npm run dev            # http://localhost:3000
 ```
+
+Everything works without `npm run ai:setup`; it only enables the [local AI extraction fallback](#local-ai-extraction-optional).
 
 Production mode:
 
@@ -83,6 +86,7 @@ Other commands:
 | `npm run db:seed` | Seed an **empty** database (refuses if data exists) |
 | `npm run db:reset` | Delete the **local SQLite file**, migrate and seed. Refuses to run against non-SQLite URLs. |
 | `npm run samples` | Regenerate the synthetic upload files in `samples/` |
+| `npm run ai:setup` | Download and verify the optional local AI model into `models/` (one time; offline afterwards) |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript |
 | `npm test` | Unit + integration tests (Vitest) |
 | `npm run test:e2e` | End-to-end tests (Playwright; starts its own server on port 3100 with an isolated DB) |
@@ -172,7 +176,7 @@ The four intelligence layers are independent: **(1) extraction → (2) determini
 
 Next.js 15 (App Router, React 19, TypeScript) · Tailwind CSS v4 with hand-written shadcn-style components on Radix primitives · Lucide icons · Prisma 6 + SQLite (portable to PostgreSQL) · Zod · unpdf (pdf.js) · tesseract.js + `@tesseract.js-data/eng` · `@napi-rs/canvas` (page rasterisation for OCR and previews) · pdfkit · Vitest · Playwright.
 
-No language model is used. The anomaly layer is deterministic and testable; an LLM was not added because it offered no clear, testable benefit over the heuristics and would require sending documents to an external service.
+AI: the optional extraction fallback uses **BERT-SQuAD int8** (ONNX Model Zoo, Apache-2.0) on `onnxruntime-node`, entirely on the local machine. It is an *extractive* question-answering model: it can only point at text in the document. No generative language model is used, and no document leaves the machine. Validation, anomaly analysis and status decisions remain deterministic rules.
 
 ## Environment variables
 
@@ -199,6 +203,19 @@ See [`.env.example`](.env.example). Placeholders only — never commit real secr
 - **Corrections:** authorised officers can correct a field. The machine value is kept; the correction, its reason and the reviewer are audited, and the next validation run uses it.
 - **OCR runs locally** (WebAssembly; no external service). If the language data is missing or `OCR_ENABLED=false`, the UI says so explicitly and scanned documents fail with that reason. OCR never silently "succeeds".
 - **Previews:** PDF pages are rasterised server-side to PNG, so no active PDF content is rendered in the browser. Highlights are drawn from stored bounding boxes.
+
+### Local AI extraction (optional)
+
+Label-anchored extraction needs a label such as "Valid Until:". When a document states an expected field only in prose ("…shall remain in force until 2 March 2029"), a local AI model suggests the value:
+
+1. **Only as a fallback:** it runs only for *expected* fields of the document category that the label extractor could not locate. Labelled documents never touch it.
+2. **Local and offline:** BERT-SQuAD int8 (119 MB) on ONNX Runtime (CPU). Install it once with `npm run ai:setup`, which verifies the file's size and SHA-256. About 0.2–0.4 s per question on a laptop CPU, plus ~2 s to load the model on first use.
+3. **Grounded:** extractive question answering can only return a span of the document text. Each suggestion keeps its page, the highlighted line(s) and an excerpt centred on the answer.
+4. **Checked before acceptance:** the model always returns *some* span, so each answer must also parse as the field's type (a real date, a plain number, an identifier with digits, a name containing "College"/"Institute", an authority naming an organisation). It must not reuse text already assigned to another field, and it must reach a minimum score. Rejections are recorded as processing notes. Confidence is capped at 75%.
+5. **Never decisive on its own:** values are stored with method `AI_QA`. Validation rules treat an unconfirmed AI suggestion like a low-confidence value: REVIEW REQUIRED, never PASS or FAIL. An officer checks the highlighted text and clicks **Confirm AI suggestion** (or corrects it). This is audited as "Confirmed AI suggestion for …", and the next validation run decides on the confirmed value.
+6. **Transparent:** the field list shows an *AI suggestion* badge (institutions see "an AICTE reviewer will confirm it"). The PDF report marks unconfirmed AI values, and System Settings shows whether the model is active.
+
+The seeded demo always runs with the fallback off (`AI_EXTRACTION_ENABLED=false` inside the seed), so seeded results are identical on every machine. Try it with `samples/ai-demo-noc-prose.pdf`; see `docs/DEMO.md`. Set `AI_EXTRACTION_ENABLED=false` to disable it.
 
 ## Validation rules engine
 
@@ -229,9 +246,9 @@ The executor applies a per-attempt timeout and bounded retries (at most 5 attemp
 
 | Suite | Command | What it covers |
 |---|---|---|
-| Unit (49) | `npm test` | Date parsing, normalisation, field extraction, upload validation, every rule check type, status derivation, transitions, run diff, verification adapters (all outcomes, timeout, bounded retries), permissions, anomaly detection |
-| Integration (24) | `npm test` | Real SQLite DB seeded through the real pipeline: auth and rate limiting, isolation, application creation, upload rejection, PDF/PNG/scanned-PDF processing, validation persistence, corrections, verification (outage, unsupported, manual), review reasons, rectification (unrelated findings preserved, corrected findings cleared), forward/decision, append-only audit, report redaction |
-| E2E (4) | `npm run test:e2e` | Sign-in failures, server-side RBAC and cross-institution isolation, upload rejection, and the full journey: findings → rectification → replacement → revalidation diff → simulated verification → forward → recorded decision → audit trail → PDF report |
+| Unit (65) | `npm test` | Date parsing, normalisation, field extraction, upload validation, every rule check type, status derivation, transitions, run diff, verification adapters (all outcomes, timeout, bounded retries), permissions, anomaly detection, AI fallback (tokenizer ids/offsets, each acceptance safeguard, rules treating AI values as unconfirmed, and the real model on the sample PDFs — skipped if the model is not installed) |
+| Integration (26) | `npm test` | Real SQLite DB seeded through the real pipeline: auth and rate limiting, isolation, application creation, upload rejection, PDF/PNG/scanned-PDF processing, validation persistence, corrections, verification (outage, unsupported, manual), review reasons, rectification (unrelated findings preserved, corrected findings cleared), forward/decision, append-only audit, report redaction |
+| E2E (6) | `npm run test:e2e` | Sign-in failures, separate sign-in portals, server-side RBAC and cross-institution isolation, upload rejection, the full journey (findings → rectification → replacement → revalidation diff → simulated verification → forward → recorded decision → audit trail → PDF report), and the AI fallback (prose certificate → AI suggestions → review → officer confirmation → PASS; skipped without the model) |
 
 ## Security
 
@@ -259,7 +276,7 @@ The executor applies a per-attempt timeout and bounded retries (at most 5 attemp
 ## Known limitations
 
 - **No official verification is connected.** All automated verification results come from simulated sources with fictional records and are labelled as such.
-- Field extraction is label-anchored and heuristic. It works on typical certificate layouts, not arbitrary free-form documents; tables and multi-value fields (several programmes on one letter) are not parsed.
+- Field extraction is label-anchored and heuristic. The optional local AI fallback covers fields stated in prose, but every AI value needs reviewer confirmation, and the model is English-only with a 256-token window per pass (long documents are scanned in overlapping windows). Tables and multi-value fields (several programmes on one letter) are not parsed.
 - OCR is English-only and processes at most 10 scanned pages per document. Handwriting and stamps are not interpreted.
 - Signature/seal detection is a text or structure cue only; there is no cryptographic signature validation.
 - Image analysis is limited to a preliminary evidence note (dimensions/resolution); physical infrastructure compliance is not assessed.

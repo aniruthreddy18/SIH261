@@ -104,6 +104,9 @@ const COMPLIANCE = [
 ];
 
 async function main() {
+  // The seeded demo must be identical on every machine, whether or not the optional local AI
+  // model is installed, so the AI fallback only applies to live uploads.
+  process.env.AI_EXTRACTION_ENABLED = "false";
   if ((await prisma.user.count()) > 0) {
     console.error("Database already contains data. Run `npm run db:reset` to rebuild the demo dataset from scratch.");
     process.exit(1);

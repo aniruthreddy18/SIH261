@@ -104,8 +104,8 @@ export function ProcessingBadge({ status }: { status: string }) {
   return <Badge tone={m.tone}>{m.label}</Badge>;
 }
 
-export function ConfidenceMeter({ value, corrected }: { value: number; corrected?: boolean }) {
-  if (corrected) return <Badge tone="accent">Reviewer-corrected</Badge>;
+export function ConfidenceMeter({ value, corrected, confirmed }: { value: number; corrected?: boolean; confirmed?: boolean }) {
+  if (corrected) return <Badge tone="accent">{confirmed ? "Reviewer-confirmed" : "Reviewer-corrected"}</Badge>;
   const p = Math.round(value * 100);
   const color = p >= 85 ? "bg-ok" : p >= 60 ? "bg-warn" : "bg-bad";
   return (

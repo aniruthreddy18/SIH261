@@ -62,7 +62,7 @@ export function renderReportPdf(d: ReportData): Promise<Buffer> {
       doc.font("Helvetica-Bold").fontSize(9.5).fillColor(INK).text(`${x.category} — ${x.file} (v${x.version})`);
       para(`Status ${x.status} · method ${x.method ?? "—"} · ${x.pages ?? "?"} page(s)${x.ocrConfidence !== null ? ` · OCR confidence ${Math.round(x.ocrConfidence * 100)}%` : ""} · SHA-256 ${x.sha256.slice(0, 16)}…`, { color: MUTED, size: 8 });
       for (const f of x.fields) {
-        para(`${f.label}: ${f.value ?? "unknown (not located)"}${f.value ? ` — ${Math.round(f.confidence * 100)}%${f.page ? `, page ${f.page}` : ""}${f.corrected ? ", reviewer-corrected" : ""}` : ""}`, { size: 8.5, indent: 10 });
+        para(`${f.label}: ${f.value ?? "unknown (not located)"}${f.value ? ` — ${Math.round(f.confidence * 100)}%${f.page ? `, page ${f.page}` : ""}${f.corrected ? ", reviewer-corrected" : ""}${f.aiSuggestion ? ", AI suggestion (unconfirmed)" : ""}` : ""}`, { size: 8.5, indent: 10 });
       }
       doc.moveDown(0.4);
     }

@@ -227,4 +227,11 @@ export const SAMPLE_FILES: DocSpec[] = [
   accreditation(greenfield, "DNAR/ACC/2026/0810", "B.Tech Artificial Intelligence and Data Science", "01/09/2026", "31/08/2031", { file: "greenfield-accreditation.pdf" }),
   faculty(greenfield, 21, { file: "greenfield-faculty-statement.pdf" }),
   infra(greenfield, "7,200", { file: "greenfield-built-up-area.pdf" }),
+  // Written as prose with no "Label: value" lines, so label-anchored extraction cannot locate the
+  // certificate number or dates: demonstrates the local AI extraction fallback.
+  {
+    file: "ai-demo-noc-prose.pdf", category: "NOC_PERMISSION", issuer: FIRE, title: "Fire Safety Clearance", fields: [],
+    body: `This is to certify that the campus of ${greenfield.name}, ${greenfield.city}, was inspected by the undersigned on 2 March 2026 and found to comply with the applicable fire-safety requirements. This clearance bears the number SFBA/NOC/2026/9124 and was granted on 3 March 2026 by the Demo State Fire & Building Safety Authority. It shall remain in force until 2 March 2029, unless revoked earlier. (Synthetic.)`,
+    signedBy: "Divisional Fire Officer (Demo)", created: "2026-03-03T08:00:00Z",
+  },
 ];

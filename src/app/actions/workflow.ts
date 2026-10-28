@@ -56,7 +56,7 @@ export async function decisionAction(applicationId: string, v: Values) {
 }
 
 export async function correctFieldAction(fieldId: string, v: Values) {
-  return runAction((a) => correctField(a, fieldId, v.value ?? "", v.reason ?? ""), { success: "Correction recorded (machine value retained). Rerun validation to apply it.", revalidate: ["/documents", "/applications"] });
+  return runAction((a) => correctField(a, fieldId, v.value ?? "", v.reason ?? ""), { success: (r) => (r.confirmedAi ? "AI suggestion confirmed. Rerun validation to apply it." : "Correction recorded (machine value retained). Rerun validation to apply it."), revalidate: ["/documents", "/applications"] });
 }
 
 export async function reprocessAction(documentId: string) {

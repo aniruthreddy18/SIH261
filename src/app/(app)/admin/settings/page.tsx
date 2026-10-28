@@ -3,6 +3,7 @@ import { getSettings, SETTING_DEFS } from "@/server/settings";
 import { prisma } from "@/server/db";
 import { pageGuard } from "@/server/session";
 import { getOcrEngine } from "@/lib/extraction/ocr";
+import { AI_MODEL, getAiExtractor } from "@/lib/extraction/ai/extractor";
 import { setIssuerSourceAction, sweepAlertsAction } from "@/app/actions/admin";
 import { PageHeader, Notice } from "@/components/page-header";
 import { AccessDenied } from "@/components/access-denied";
@@ -20,6 +21,7 @@ export default async function SettingsPage() {
   if (denied) return (<><PageHeader title="System Settings" crumbs={crumbs} /><AccessDenied /></>);
   const [settings, sources] = await Promise.all([getSettings(), prisma.issuerSource.findMany({ orderBy: { name: "asc" } })]);
   const ocr = getOcrEngine().status();
+  const ai = getAiExtractor().status();
   const rows: SettingRow[] = Object.entries(SETTING_DEFS).map(([key, d]) => ({ key, label: d.label, help: d.help, type: d.type, value: settings[key as keyof typeof settings], min: "min" in d ? d.min : undefined, max: "max" in d ? d.max : undefined }));
   const officialConfigured = Boolean(process.env.OFFICIAL_ISSUER_API_URL && process.env.OFFICIAL_ISSUER_API_KEY);
   return (
@@ -36,6 +38,12 @@ export default async function SettingsPage() {
             <CardBody className="space-y-2 text-xs">
               <p className="flex items-center justify-between gap-2"><span className="text-muted">OCR engine</span>{ocr.available ? <Badge tone="ok">Available (Tesseract)</Badge> : <Badge tone="bad">Unavailable</Badge>}</p>
               {!ocr.available && <p className="text-bad">{ocr.reason}</p>}
+              <p className="flex items-center justify-between gap-2"><span className="text-muted">Local AI extraction</span>{ai.available ? <Badge tone="ok">Active (offline)</Badge> : ai.enabled ? <Badge tone="warn">Not installed</Badge> : <Badge tone="neutral">Disabled</Badge>}</p>
+              {ai.available ? (
+                <p className="text-muted">{AI_MODEL.name} on {AI_MODEL.runtime}. Used only for expected fields the label extractor cannot locate; every suggestion must be confirmed by a reviewer. {AI_MODEL.license}, from {AI_MODEL.source}.</p>
+              ) : (
+                <p className={ai.enabled ? "text-warn" : "text-muted"}>{ai.reason}</p>
+              )}
               <p className="flex items-center justify-between gap-2"><span className="text-muted">Official issuer provider</span>{officialConfigured ? <Badge tone="ok">Configured</Badge> : <Badge tone="neutral">Not configured</Badge>}</p>
               <p className="flex items-center justify-between gap-2"><span className="text-muted">Document storage</span><span className="font-mono">private local disk</span></p>
               <p className="flex items-center justify-between gap-2"><span className="text-muted">E-mail delivery</span><Badge tone="neutral">Not configured — in-app only</Badge></p>

@@ -26,6 +26,8 @@ export type ExtractionMethod =
   | "PDF_TEXT_HEURISTIC"
   | "OCR_HEURISTIC"
   | "PDF_STRUCTURE"
+  /** Suggested by the local AI model (extractive question answering); needs reviewer confirmation. */
+  | "AI_QA"
   | "NOT_FOUND";
 
 export interface ExtractedFieldDraft {

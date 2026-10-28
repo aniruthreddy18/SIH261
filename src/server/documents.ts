@@ -197,9 +197,11 @@ export async function correctField(actor: Actor, fieldId: string, value: string,
     if (!parsed?.normalized) throw new DomainError(`"${trimmed}" is not a valid ${def.type === "date" ? "date (use DD/MM/YYYY)" : def.type}.`);
   }
   const before = { machineValue: field.value, previousCorrection: field.correctedValue };
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     await tx.extractedField.update({ where: { id: fieldId }, data: { correctedValue: trimmed || null, correctedById: actor.userId, correctedAt: new Date(), correctionReason: reason.trim() } });
-    await recordAudit({ actor, eventType: "FIELD_CORRECTED", action: `Corrected ${field.label}`, applicationId: field.version.document.applicationId, documentId: field.version.documentId, before, after: { correctedValue: trimmed || null }, reason: reason.trim() }, tx);
+    const confirmsAi = field.method.startsWith("AI_") && trimmed !== "" && trimmed === field.value;
+    await recordAudit({ actor, eventType: "FIELD_CORRECTED", action: confirmsAi ? `Confirmed AI suggestion for ${field.label}` : `Corrected ${field.label}`, applicationId: field.version.document.applicationId, documentId: field.version.documentId, before, after: { correctedValue: trimmed || null }, reason: reason.trim() }, tx);
+    return { confirmedAi: confirmsAi };
   });
 }
 

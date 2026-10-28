@@ -38,7 +38,7 @@ const docLabel = (d: DocumentContext) => `${d.categoryName} — ${d.fileName} (v
 function fieldEvidence(d: DocumentContext, f: FieldValue, label = fieldLabel(f.key)): Evidence {
   return {
     kind: "FIELD",
-    label: `${label}${f.corrected ? " (reviewer-corrected)" : ""}`,
+    label: `${label}${f.corrected ? " (reviewer-corrected)" : isAiSuggestion(f) ? " (AI suggestion — unconfirmed)" : ""}`,
     value: f.value,
     documentId: d.documentId,
     versionId: d.versionId,
@@ -89,8 +89,17 @@ function processingGate(rule: RuleSpec, d: DocumentContext, subjectKey: string):
   return null;
 }
 
-const isLowConfidence = (ctx: ApplicationContext, f: FieldValue) => !f.corrected && f.confidence < ctx.settings.lowConfidenceThreshold;
 const pct = (n: number) => `${Math.round(n * 100)}%`;
+/** A value suggested by the local AI model that no reviewer has confirmed yet. */
+const isAiSuggestion = (f: FieldValue) => !f.corrected && f.method.startsWith("AI_");
+/**
+ * Values a rule must not decide on until a reviewer confirms them: low-confidence extractions and
+ * unconfirmed AI suggestions. A reviewer confirmation or correction (corrected = true) lifts this.
+ */
+const needsConfirmation = (ctx: ApplicationContext, f: FieldValue) => !f.corrected && (isAiSuggestion(f) || f.confidence < ctx.settings.lowConfidenceThreshold);
+/** Why a value needs confirmation, phrased to follow the field name. */
+const uncertainty = (f: FieldValue) =>
+  isAiSuggestion(f) ? `was suggested by the local AI model (${pct(f.confidence)}) and has not been confirmed by a reviewer` : `was extracted with low confidence (${pct(f.confidence)})`;
 
 // ---------------------------------------------------------------------------
 // Checks
@@ -143,7 +152,7 @@ const requiredFields: Check<"REQUIRED_FIELDS"> = (ctx, rule, def) =>
     for (const key of def.fields) {
       const f = usableField(d, key);
       if (!f || (["issueDate", "expiryDate", "academicYear", "approvedIntake"].includes(key) && !f.normalized)) missing.push(key);
-      else if (isLowConfidence(ctx, f)) low.push(f);
+      else if (needsConfirmation(ctx, f)) low.push(f);
       else present.push(f);
     }
     const common = { subjectKey, subjectLabel: docLabel(d), documentId: d.documentId, documentVersionId: d.versionId, categoryCode: d.categoryCode, expected: `Fields present: ${def.fields.map(fieldLabel).join(", ")}` };
@@ -162,7 +171,7 @@ const requiredFields: Check<"REQUIRED_FIELDS"> = (ctx, rule, def) =>
       return out(rule, {
         ...common,
         status: "REVIEW_REQUIRED",
-        explanation: `All required fields were located, but ${low.map((f) => `${fieldLabel(f.key)} (${pct(f.confidence)})`).join(", ")} were extracted with low confidence.`,
+        explanation: `All required fields were located, but ${low.map((f) => `${fieldLabel(f.key)} (${isAiSuggestion(f) ? "AI suggestion" : "low confidence"}, ${pct(f.confidence)})`).join(", ")} must be confirmed by a reviewer.`,
         observed: low.map((f) => `${fieldLabel(f.key)}: ${f.value}`).join("; "),
         evidence,
       });
@@ -217,8 +226,8 @@ const dateValidOn: Check<"DATE_VALID_ON"> = (ctx, rule, def) => {
       });
     }
     const evidence = [fieldEvidence(d, f), { kind: "APPLICATION" as const, label: `Reference date (${ref.label})`, value: formatIsoDate(ref.iso) }];
-    if (isLowConfidence(ctx, f)) {
-      return out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: `${fieldLabel(def.field)} "${f.value}" was extracted with low confidence (${pct(f.confidence)}); a reviewer must confirm it before validity can be decided.`, expected, observed: formatIsoDate(f.normalized), evidence });
+    if (needsConfirmation(ctx, f)) {
+      return out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: `${fieldLabel(def.field)} "${f.value}" ${uncertainty(f)}; a reviewer must confirm it before validity can be decided.`, expected, observed: formatIsoDate(f.normalized), evidence });
     }
     if (f.normalized < ref.iso) {
       return out(rule, {
@@ -248,8 +257,9 @@ const dateOrder: Check<"DATE_ORDER"> = (ctx, rule, def) =>
     }
     const evidence = [fieldEvidence(d, a), fieldEvidence(d, b)];
     const observed = `${formatIsoDate(a.normalized)} → ${formatIsoDate(b.normalized)}`;
-    if (isLowConfidence(ctx, a) || isLowConfidence(ctx, b)) {
-      return [out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: "One of the dates was extracted with low confidence.", observed, evidence })];
+    const unsure = [a, b].find((x) => needsConfirmation(ctx, x));
+    if (unsure) {
+      return [out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: `${fieldLabel(unsure.key)} ${uncertainty(unsure)}; the date order cannot be decided until it is confirmed.`, observed, evidence })];
     }
     if (a.normalized > b.normalized) {
       return [out(rule, { ...common, status: "FAIL", explanation: `${fieldLabel(def.earlierField)} (${formatIsoDate(a.normalized)}) is after ${fieldLabel(def.laterField)} (${formatIsoDate(b.normalized)}).`, observed, evidence })];
@@ -266,7 +276,7 @@ const dateNotFuture: Check<"DATE_NOT_FUTURE"> = (ctx, rule, def) =>
     const common = { subjectKey, subjectLabel: docLabel(d), documentId: d.documentId, documentVersionId: d.versionId, categoryCode: d.categoryCode, expected: `${fieldLabel(def.field)} on or before ${formatIsoDate(ctx.runDate)}` };
     if (!f?.normalized) return out(rule, { ...common, status: "NOT_APPLICABLE", explanation: `${fieldLabel(def.field)} not available on this document.` });
     const evidence = [fieldEvidence(d, f)];
-    if (isLowConfidence(ctx, f)) return out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: "Date extracted with low confidence.", observed: formatIsoDate(f.normalized), evidence });
+    if (needsConfirmation(ctx, f)) return out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: `${fieldLabel(def.field)} ${uncertainty(f)}.`, observed: formatIsoDate(f.normalized), evidence });
     if (f.normalized > ctx.runDate) {
       return out(rule, { ...common, status: "FAIL", explanation: `${fieldLabel(def.field)} ${formatIsoDate(f.normalized)} is later than the validation date ${formatIsoDate(ctx.runDate)}.`, observed: formatIsoDate(f.normalized), evidence });
     }
@@ -323,8 +333,8 @@ const crossDocumentMatch: Check<"CROSS_DOCUMENT_MATCH"> = (ctx, rule, def) => {
       results.push(out(rule, { ...common, status: "PASS", explanation: cmp.outcome === "EXACT" ? `${fieldLabel(def.field)} matches the application.` : `${fieldLabel(def.field)} matches the application after normalisation (formatting differences only).`, expected, observed: f.value, evidence }));
     } else if (cmp.outcome === "SIMILAR") {
       results.push(out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: `${fieldLabel(def.field)} "${f.value}" is similar but not identical to the application value "${appValue}" (similarity ${pct(cmp.similarity)}). A reviewer should decide whether the difference is substantive.`, expected, observed: f.value, evidence }));
-    } else if (isLowConfidence(ctx, f)) {
-      results.push(out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: `${fieldLabel(def.field)} "${f.value}" differs from the application, but was extracted with low confidence (${pct(f.confidence)}).`, expected, observed: f.value, evidence }));
+    } else if (needsConfirmation(ctx, f)) {
+      results.push(out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: `${fieldLabel(def.field)} "${f.value}" differs from the application, but ${uncertainty(f)}.`, expected, observed: f.value, evidence }));
     } else {
       results.push(out(rule, {
         ...common,
@@ -449,7 +459,7 @@ const fieldCondition: Check<"FIELD_CONDITION"> = (ctx, rule, def) =>
       return out(rule, { ...common, status: def.missingOutcome, explanation: `${fieldLabel(def.field)} could not be located on the document.`, observed: "Not found" });
     }
     const evidence = [fieldEvidence(d, f)];
-    if (isLowConfidence(ctx, f)) return out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: `${fieldLabel(def.field)} was extracted with low confidence (${pct(f.confidence)}).`, observed: f.value, evidence });
+    if (needsConfirmation(ctx, f)) return out(rule, { ...common, status: "REVIEW_REQUIRED", explanation: `${fieldLabel(def.field)} ${uncertainty(f)}.`, observed: f.value, evidence });
     const v = (f.normalized ?? f.value!).toLowerCase();
     const target = (def.value ?? "").toLowerCase().trim();
     let pass: boolean;

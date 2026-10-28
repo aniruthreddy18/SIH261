@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   // Separate build dir lets the E2E server run alongside a dev server.
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // Native / worker-based packages must not be bundled by webpack.
-  serverExternalPackages: ["tesseract.js", "@napi-rs/canvas", "pdfkit", "unpdf", "@prisma/client"],
+  serverExternalPackages: ["tesseract.js", "@napi-rs/canvas", "pdfkit", "unpdf", "@prisma/client", "onnxruntime-node"],
   experimental: {
     serverActions: { bodySizeLimit: "2mb" },
   },
