@@ -13,7 +13,7 @@ async function signIn(page: Page, email: string) {
   await page.goto(email.startsWith("applicant.") ? "/institution/login" : "/login");
   await page.fill("#email", email);
   await page.fill("#password", PASSWORD);
-  await Promise.all([page.waitForURL((u) => !u.pathname.includes("login")), page.click("button[type=submit]")]);
+  await Promise.all([page.waitForURL((u) => !u.pathname.includes("login")), page.getByRole("button", { name: "Sign in", exact: true }).click()]);
 }
 
 /**
@@ -56,7 +56,7 @@ test("rejects bad credentials and requires authentication", async ({ page, reque
   await expect(page).toHaveURL(/\/login/);
   await page.fill("#email", "scrutiny@pravah.demo");
   await page.fill("#password", "wrong-password");
-  await page.click("button[type=submit]");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Invalid email or password" })).toBeVisible();
   const res = await request.get("/api/exports/applications");
   expect(res.status()).toBe(401);
@@ -67,13 +67,13 @@ test("keeps institutions and AICTE staff on separate sign-in portals", async ({ 
   await page.goto("/login");
   await page.fill("#email", "applicant.meridian@pravah.demo");
   await page.fill("#password", PASSWORD);
-  await page.click("button[type=submit]");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Please use the Institution login" })).toBeVisible();
   // …and a staff account is refused on the Institution login.
   await page.goto("/institution/login");
   await page.fill("#email", "scrutiny@pravah.demo");
   await page.fill("#password", PASSWORD);
-  await page.click("button[type=submit]");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Please use the AICTE official sign-in" })).toBeVisible();
   // Visiting the portal while signed out leads to the Institution login.
   await page.goto("/portal/help");
@@ -82,6 +82,27 @@ test("keeps institutions and AICTE staff on separate sign-in portals", async ({ 
   await signIn(page, "scrutiny@pravah.demo");
   await page.goto("/portal");
   await expect(page).toHaveURL(/\/$/);
+});
+
+test("evaluators can enter any demo role with one click, through normal authentication", async ({ page }) => {
+  await page.context().clearCookies();
+  await page.goto("/login");
+  await expect(page.locator("#email")).toHaveValue("bureau@pravah.demo"); // the manual form is pre-filled
+  await page.getByRole("button", { name: /Enter as Approval Bureau Officer/ }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByText("Welcome, Rohit Saxena")).toBeVisible();
+  await page.context().clearCookies();
+  await page.goto("/institution/login");
+  await page.getByRole("button", { name: /Enter as Greenfield College of Engineering/ }).click();
+  await expect(page).toHaveURL(/\/portal$/);
+  // The quick path cannot be used for accounts outside the demo list.
+  await page.context().clearCookies();
+  await page.goto("/login");
+  await page.locator("form:has(input[name=demo]) input[name=email]").first().evaluate((el: HTMLInputElement) => { el.value = "applicant.meridian@pravah.demo"; });
+  await page.getByRole("button", { name: /Enter as/ }).first().click();
+  await expect(page.getByRole("alert").filter({ hasText: "Quick demo access is not available" })).toBeVisible();
+  const audited = await db.auditEvent.count({ where: { eventType: "AUTH_LOGIN", actorLabel: { contains: "Rohit Saxena" } } });
+  expect(audited).toBeGreaterThan(0);
 });
 
 /**

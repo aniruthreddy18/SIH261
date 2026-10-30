@@ -24,7 +24,7 @@ To start the demo over on a paid instance with a disk, open the service **Shell*
 
 ## Things to know
 
-- **Who can sign in.** With `DEMO_MODE=true` the sign-in pages list the demo accounts and their shared password, so anyone with the link can sign in. Use synthetic data only. Set `DEMO_MODE=false` and change the passwords for anything beyond a demo.
+- **Who can sign in.** With `DEMO_MODE=true` the sign-in pages offer one-click *Evaluator quick access* to every demo account and show the shared password, so anyone with the link can sign in. Use synthetic data only. Set `DEMO_MODE=false` and change the passwords for anything beyond a demo.
 - **One instance only.** SQLite and the in-memory rate limiter assume a single server; do not scale out.
 - **Alerts.** The alert sweep runs inside the server every `ALERT_SWEEP_INTERVAL_MINUTES` (default 60). On the free instance it only runs while the service is awake; administrators can also run it from **Alerts**.
 - **Pricing and limits change.** Check Render's current pricing page before choosing a plan.

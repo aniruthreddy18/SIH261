@@ -3,13 +3,18 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { login, logout, SESSION_COOKIE, type LoginPortal } from "@/server/auth";
 import { clearSessionCookie, getActor, setSessionCookie } from "@/server/session";
+import { DEMO_PASSWORD, isDemoAccount, isDemoMode } from "@/lib/demo-accounts";
 
 const safePath = (p: string, fallback: string) => (p.startsWith("/") && !p.startsWith("//") ? p : fallback);
 
 export async function loginAction(_prev: { error?: string } | undefined, form: FormData): Promise<{ error?: string }> {
   const email = String(form.get("email") ?? "");
-  const password = String(form.get("password") ?? "");
   const portal: LoginPortal = form.get("portal") === "INSTITUTION" ? "INSTITUTION" : "OFFICIAL";
+  // One-click demo access: only in demo mode, only for the listed synthetic accounts, and still
+  // through the normal password check below (the demo password is published on the page anyway).
+  const quick = form.get("demo") === "1";
+  if (quick && !(isDemoMode() && isDemoAccount(email, portal))) return { error: "Quick demo access is not available for this account." };
+  const password = quick ? DEMO_PASSWORD : String(form.get("password") ?? "");
   const next = String(form.get("next") ?? "");
   if (!email || !password) return { error: "Enter your email and password." };
   const h = await headers();

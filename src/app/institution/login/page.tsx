@@ -5,21 +5,11 @@ import { prisma } from "@/server/db";
 import { BrandMark } from "@/components/brand";
 import { LoginForm } from "@/app/login/login-form";
 import { PortalSwitch } from "@/app/login/portal-switch";
+import { DemoAccess } from "@/app/login/demo-access";
+import { DEMO_INSTITUTIONS, DEMO_PASSWORD, isDemoMode } from "@/lib/demo-accounts";
 import { DECISION_SUPPORT_DISCLAIMER } from "@/lib/domain";
 
 export const metadata = { title: "Institution login" };
-
-const DEMO_INSTITUTIONS = [
-  { email: "applicant.meridian@pravah.demo", institution: "Meridian Institute of Management", note: "Expired fire NOC — fix it via rectification" },
-  { email: "applicant.lakeview@pravah.demo", institution: "Lakeview College of Engineering", note: "Returned for rectification — missing NOC" },
-  { email: "applicant.greenfield@pravah.demo", institution: "Greenfield College of Engineering", note: "Draft — upload documents and run checks" },
-  { email: "applicant.coastal@pravah.demo", institution: "Coastal Institute of Pharmacy", note: "Mismatched identifier and intake" },
-  { email: "applicant.sunrise@pravah.demo", institution: "Sunrise Institute of Technology", note: "All automated checks passed" },
-  { email: "applicant.valley@pravah.demo", institution: "Valley Institute of Technology", note: "Forwarded to the competent authority" },
-  { email: "applicant.northfield@pravah.demo", institution: "Northfield School of Architecture", note: "Under review — issuer mismatch" },
-  { email: "applicant.riverside@pravah.demo", institution: "Riverside Polytechnic Institute", note: "Under review — scanned document, issuer pending" },
-  { email: "applicant.highland@pravah.demo", institution: "Highland Institute of Technology", note: "Under review — duplicate evidence" },
-];
 
 const STEPS = [
   { Icon: FileUp, title: "Submit", text: "Create your application and upload the required documents (PDF, PNG or JPEG)." },
@@ -32,7 +22,7 @@ export default async function InstitutionLoginPage({ searchParams }: { searchPar
   const actor = await getActor();
   if (actor) redirect(actor.role === "APPLICANT" ? "/portal" : "/");
   const { next } = await searchParams;
-  const demo = process.env.DEMO_MODE !== "false";
+  const demo = isDemoMode();
   // Only list demo institutions that exist in this database (the compact demo seeds three).
   const existing = demo ? new Set((await prisma.user.findMany({ where: { role: "APPLICANT", active: true }, select: { email: true } })).map((u) => u.email)) : new Set<string>();
   const demoInstitutions = DEMO_INSTITUTIONS.filter((a) => existing.has(a.email));
@@ -70,28 +60,14 @@ export default async function InstitutionLoginPage({ searchParams }: { searchPar
         <PortalSwitch current="INSTITUTION" />
         <h2 className="mt-6 text-lg font-semibold text-ink">Institution login</h2>
         <p className="mt-1 text-xs text-muted">Sign in with your institution&rsquo;s authorised account. You will only see your own institution&rsquo;s applications.</p>
-        <LoginForm next={next ?? "/portal"} portal="INSTITUTION" />
         {demo && demoInstitutions.length > 0 && (
-          <div className="mt-8 rounded-lg border border-border bg-surface">
-            <div className="border-b border-border px-4 py-2.5">
-              <p className="text-xs font-semibold text-ink">Demo institution accounts</p>
-              <p className="text-[11px] text-muted">Password for all: <code className="rounded bg-subtle px-1 font-mono">Pravah@Demo2026</code>. Selecting one fills the form.</p>
-            </div>
-            <ul className="max-h-80 divide-y divide-border overflow-y-auto">
-              {demoInstitutions.map((a) => (
-                <li key={a.email}>
-                  <button type="button" data-demo-email={a.email} className="demo-fill flex w-full items-start gap-3 px-4 py-2 text-left hover:bg-subtle">
-                    <span className="mt-1 size-2.5 shrink-0 rounded-full bg-green" aria-hidden />
-                    <span>
-                      <span className="block text-[13px] font-medium text-ink">{a.institution}</span>
-                      <span className="block text-[11px] text-muted">{a.email} — {a.note}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <div className="mt-4">
+            <DemoAccess portal="INSTITUTION" next={next ?? "/portal"} cards={demoInstitutions.map((a) => ({ email: a.email, title: a.institution, note: a.note, dot: "bg-green" }))} />
+            <p className="mt-4 flex items-center gap-3 text-[11px] uppercase tracking-wide text-faint"><span className="h-px flex-1 bg-border" />or sign in with email<span className="h-px flex-1 bg-border" /></p>
           </div>
         )}
+        <LoginForm next={next ?? "/portal"} portal="INSTITUTION" defaultEmail={demo ? demoInstitutions[0]?.email : undefined} defaultPassword={demo && demoInstitutions.length ? DEMO_PASSWORD : undefined} />
+        {demo && demoInstitutions.length > 0 && <p className="mt-3 text-[11px] text-muted">Demo password for every account: <code className="rounded bg-subtle px-1 font-mono">{DEMO_PASSWORD}</code>. Sign-in still goes through normal authentication, and all data is synthetic.</p>}
       </div>
     </div>
   );

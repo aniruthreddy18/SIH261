@@ -31,7 +31,7 @@ No environment variables are required: the image sets `DATABASE_URL=file:/data/p
 
 ## Things to know
 
-- **Who can sign in.** With `DEMO_MODE=true` the sign-in pages list the demo accounts and their shared password, so anyone with the link can sign in, including as the administrator. That is intended for a judged demo with synthetic data. Do not upload real documents. For anything beyond a demo, set `DEMO_MODE=false` and change the demo passwords (User Management).
+- **Who can sign in.** With `DEMO_MODE=true` the sign-in pages offer one-click *Evaluator quick access* to every demo account and show the shared password, so anyone with the link can sign in, including as the administrator. That is intended for a judged demo with synthetic data. Do not upload real documents. For anything beyond a demo, set `DEMO_MODE=false` and change the demo passwords (User Management).
 - **One instance only.** SQLite and the in-memory login rate limiter assume a single server. `railway.json` sets one replica; do not scale out.
 - **Redeploys keep data.** Migrations are re-applied safely and the seed is skipped when data exists (`Database already holds N user account(s); keeping existing data.`).
 - **Upgrading a volume seeded before the approval-workflow release.** On the first start after the upgrade, the existing data is kept and the Regions, sample pathways and timelines, and the new staff accounts (`bureau@`, `committee@`, `committee2@`, `ro.south@`) are added. The background monitoring cases and compliance items are only created by a fresh seed: wipe the volume (below) to get the full demo.

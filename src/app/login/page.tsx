@@ -2,26 +2,19 @@ import { redirect } from "next/navigation";
 import { getActor } from "@/server/session";
 import { BrandMark } from "@/components/brand";
 import { ROLE_THEME } from "@/lib/role-theme";
+import { DEMO_OFFICIALS, DEMO_PASSWORD, isDemoMode } from "@/lib/demo-accounts";
 import { LoginForm } from "./login-form";
+import { DemoAccess } from "./demo-access";
 import { PortalSwitch } from "./portal-switch";
-import { DECISION_SUPPORT_DISCLAIMER, ROLE_LABELS, type Role } from "@/lib/domain";
+import { DECISION_SUPPORT_DISCLAIMER } from "@/lib/domain";
 
 export const metadata = { title: "AICTE official sign-in" };
-
-const DEMO_ACCOUNTS: { email: string; role: Role; note: string }[] = [
-  { email: "scrutiny@pravah.demo", role: "SCRUTINY_OFFICER", note: "All Regions. Scrutiny: validation, issuer verification, findings, return for rectification, forwarding along the pathway." },
-  { email: "ro.south@pravah.demo", role: "SCRUTINY_OFFICER", note: "Southern Region only — the same desk, scoped to one Region's institutions, pendency and alerts." },
-  { email: "bureau@pravah.demo", role: "BUREAU_OFFICER", note: "Pendency across Regions, EVC scheduling, undertakings and document validity, escalations, consolidated reports." },
-  { email: "committee@pravah.demo", role: "COMMITTEE_MEMBER", note: "EVC convenor: scheduled visits and reports; records SAC/SHC outcomes." },
-  { email: "senior@pravah.demo", role: "SENIOR_OFFICIAL", note: "Competent authority: records the outcome, sees escalations, may revert a stage." },
-  { email: "admin@pravah.demo", role: "ADMIN", note: "Users and Regions, workflow pathways and timelines, rules, issuer sources, settings." },
-];
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const actor = await getActor();
   if (actor) redirect(actor.role === "APPLICANT" ? "/portal" : "/");
   const { next } = await searchParams;
-  const demo = process.env.DEMO_MODE !== "false";
+  const demo = isDemoMode();
   return (
     <div className="flex min-h-screen flex-col items-center gap-6 px-4 py-6 lg:flex-row lg:items-center lg:justify-center lg:gap-10 lg:px-10">
       <div className="app-backdrop app-backdrop-vivid" aria-hidden />
@@ -56,28 +49,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <PortalSwitch current="OFFICIAL" />
         <h2 className="mt-6 text-lg font-semibold text-ink">AICTE official sign-in</h2>
         <p className="mt-1 text-xs text-muted">For Regional and Bureau officers, committee members, competent authorities and administrators. Institutions use the <a href="/institution/login" className="font-medium text-green underline">Institution login</a>.</p>
-        <LoginForm next={next ?? "/"} portal="OFFICIAL" />
         {demo && (
-          <div className="mt-8 rounded-lg border border-border bg-surface">
-            <div className="border-b border-border px-4 py-2.5">
-              <p className="text-xs font-semibold text-ink">Demo official accounts</p>
-              <p className="text-[11px] text-muted">Password for all: <code className="rounded bg-subtle px-1 font-mono">Pravah@Demo2026</code>. Selecting an account fills the form; sign-in still goes through normal authentication.</p>
-            </div>
-            <ul className="divide-y divide-border">
-              {DEMO_ACCOUNTS.map((a) => (
-                <li key={a.email}>
-                  <button type="button" data-demo-email={a.email} className="demo-fill flex w-full items-start gap-3 px-4 py-2 text-left hover:bg-subtle">
-                    <span className={`mt-1 size-2.5 shrink-0 rounded-full ${ROLE_THEME[a.role].dot}`} aria-hidden />
-                    <span>
-                      <span className="block text-[13px] font-medium text-ink">{ROLE_LABELS[a.role]} <span className="font-normal text-muted">· {ROLE_THEME[a.role].portal}</span></span>
-                      <span className="block text-[11px] text-muted">{a.email} — {a.note}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <div className="mt-4">
+            <DemoAccess portal="OFFICIAL" next={next ?? "/"} cards={DEMO_OFFICIALS.map((a) => ({ email: a.email, title: a.title, subtitle: a.scope, note: a.note, dot: ROLE_THEME[a.role].dot }))} />
+            <p className="mt-4 flex items-center gap-3 text-[11px] uppercase tracking-wide text-faint"><span className="h-px flex-1 bg-border" />or sign in with email<span className="h-px flex-1 bg-border" /></p>
           </div>
         )}
+        <LoginForm next={next ?? "/"} portal="OFFICIAL" defaultEmail={demo ? DEMO_OFFICIALS[0].email : undefined} defaultPassword={demo ? DEMO_PASSWORD : undefined} />
+        {demo && <p className="mt-3 text-[11px] text-muted">Demo password for every account: <code className="rounded bg-subtle px-1 font-mono">{DEMO_PASSWORD}</code>. Sign-in still goes through normal authentication, and all data is synthetic.</p>}
       </div>
     </div>
   );

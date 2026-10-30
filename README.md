@@ -137,7 +137,9 @@ There are **two separate sign-in pages**, and the server only accepts each accou
 
 A switch at the top of each page links to the other. An institution account used on the official page (or a staff account on the institution page) is refused with a message pointing to the right page, and the attempt is audited.
 
-Password for every account: **`Pravah@Demo2026`** (stored as scrypt hashes; each sign-in page lists its demo accounts when `DEMO_MODE=true`).
+Password for every account: **`Pravah@Demo2026`** (stored as scrypt hashes).
+
+**Evaluator quick access.** While `DEMO_MODE=true` (the default), both sign-in pages show an *Evaluator quick access* panel: one click on a role or institution signs in as that demo account, and the email form below is pre-filled. The click still goes through the normal password check, sessions, role permissions and audit log; it only works for the listed synthetic demo accounts. Set `DEMO_MODE=false` after the evaluation to return to plain sign-in.
 
 | Role | Email | Use it to… |
 |---|---|---|

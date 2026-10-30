@@ -2,7 +2,7 @@
 // and people are invented. Nothing here is AICTE data.
 import type { DocSpec } from "./render";
 
-export const DEMO_PASSWORD = "Pravah@Demo2026";
+export { DEMO_PASSWORD } from "../../src/lib/demo-accounts";
 export const ACADEMIC_YEAR = "2027-28";
 
 export interface DemoInstitution {
