@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { BadgeCheck, CalendarClock, FileClock, FilePlus2, FileWarning, FolderOpen, HelpCircle, MessageSquareWarning, Undo2 } from "lucide-react";
+import { BadgeCheck, CalendarCheck, CalendarClock, ClipboardList, FileClock, FilePlus2, FileWarning, FolderOpen, HelpCircle, MessageSquareWarning, Undo2 } from "lucide-react";
+import { complianceTypeLabel, daysBetween, dueState } from "@/lib/workflow/stages";
+import { DueBadge } from "@/components/workflow/stage-ui";
 import { listApplications } from "@/server/applications";
 import { prisma } from "@/server/db";
 import { requireActor } from "@/server/session";
@@ -15,21 +17,25 @@ export const metadata = { title: "Home" };
 export default async function PortalHome() {
   const actor = await requireActor();
   const scope = { institutionId: actor.institutionId ?? "__none__" };
-  const [apps, institution, rectifications, infoRequests] = await Promise.all([
+  const now = new Date();
+  const [apps, institution, rectifications, infoRequests, compliance, visits] = await Promise.all([
     listApplications(actor),
     prisma.institution.findUnique({ where: { id: actor.institutionId ?? "" }, select: { name: true } }),
     prisma.rectificationRequest.findMany({ where: { status: "OPEN", application: scope }, include: { application: { select: { id: true, reference: true } } }, orderBy: { dueDate: "asc" } }),
     prisma.finding.findMany({ where: { status: "INFO_REQUESTED", application: scope }, include: { application: { select: { id: true, reference: true } } }, orderBy: { updatedAt: "desc" } }),
+    // Compliance deadlines within 60 days (or overdue) that still need a submission.
+    prisma.complianceItem.findMany({ where: { ...scope, status: "OPEN", dueDate: { lte: new Date(now.getTime() + 60 * 86_400_000) } }, orderBy: { dueDate: "asc" } }),
+    prisma.evcVisit.findMany({ where: { status: "SCHEDULED", application: scope }, orderBy: { visitDate: "asc" }, include: { application: { select: { id: true, reference: true } } } }),
   ]);
   const count = (s: string[]) => apps.filter((a) => s.includes(a.status)).length;
   const needsAction = apps.filter((a) => ["DRAFT", "AUTO_FAILED", "PROCESSING_FAILED"].includes(a.status));
   const tiles = [
     { label: "My applications", value: apps.length, Icon: FolderOpen },
     { label: "Need your action", value: count(["DRAFT", "RECTIFICATION_REQUIRED", "AUTO_FAILED", "PROCESSING_FAILED"]), Icon: FileWarning },
-    { label: "Under AICTE review", value: count(["PROCESSING", "REVIEW_REQUIRED", "AUTO_PASSED"]), Icon: FileClock },
+    { label: "Under AICTE review", value: count(["PROCESSING", "REVIEW_REQUIRED", "AUTO_PASSED", "IN_STAGE_REVIEW"]), Icon: FileClock },
     { label: "Forwarded or decided", value: count(["READY_FOR_AUTHORIZED_REVIEW", "CLOSED"]), Icon: BadgeCheck },
   ];
-  const actions = rectifications.length + infoRequests.length + needsAction.length;
+  const actions = rectifications.length + infoRequests.length + needsAction.length + compliance.length;
   return (
     <>
       <DashboardHero
@@ -54,6 +60,14 @@ export default async function PortalHome() {
         ))}
       </div>
 
+      {visits.map((v) => (
+        <div key={v.id} className="glass-card mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-info-line px-4 py-3 text-[13px]">
+          <CalendarCheck className="size-4 shrink-0 text-info" />
+          <p className="min-w-0 flex-1 text-ink">Expert Visit Committee visit scheduled for <strong>{formatDate(v.visitDate)}</strong> · <span className="font-mono text-xs">{v.application.reference}</span>. Keep the premises, records and original documents available.</p>
+          <Link href={`/portal/applications/${v.application.id}`} className="text-xs font-medium text-accent hover:underline">Open application</Link>
+        </div>
+      ))}
+
       <Card className={`mt-4 ${actions ? "border-warn-line" : ""}`}>
         <CardHeader title="Action required" description={actions ? "Things AICTE is waiting on from your institution." : undefined} />
         {actions === 0 ? (
@@ -69,6 +83,18 @@ export default async function PortalHome() {
                     <p className="mt-0.5 text-xs text-muted">{r.message}</p>
                   </div>
                   {r.dueDate && <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-warn"><CalendarClock className="size-3.5" /> Due {formatDate(r.dueDate)}</span>}
+                </Link>
+              </li>
+            ))}
+            {compliance.map((c) => (
+              <li key={c.id}>
+                <Link href={`/portal/compliance/${c.id}`} className="flex items-start gap-3 px-4 py-3 hover:bg-subtle/60">
+                  <ClipboardList className="mt-0.5 size-4 shrink-0 text-warn" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium text-ink">{c.kind === "UNDERTAKING" ? "Undertaking due" : "Document renewal due"} · {c.title}</p>
+                    <p className="mt-0.5 text-xs text-muted">{complianceTypeLabel(c.typeCode)} · {c.kind === "UNDERTAKING" ? "due" : "valid until"} {formatDate(c.dueDate)} — submit evidence online.</p>
+                  </div>
+                  <DueBadge state={dueState(c.dueDate, now, 30)} daysLeft={daysBetween(now, c.dueDate)} />
                 </Link>
               </li>
             ))}

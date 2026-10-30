@@ -1,17 +1,19 @@
-# Pravah AI — AICTE Application Validation & Compliance Intelligence
+# Pravah AI — Integrated AICTE Approval Workflow, Compliance Monitoring & Alerts
 
-**Prototype for Smart India Hackathon 2026 · Problem Statement 26261**
-*AI-Powered Application Validation, Document Authentication and Regulatory Compliance Verification*
+**Prototype for Smart India Hackathon 2026 · Problem Statement 26262**
+*Integrated AICTE Approval Workflow Automation, Compliance Monitoring and Alert Management System*
 
-Pravah AI helps authorised personnel validate institutional applications and their supporting documents against configurable requirements, institutional records and issuing-authority sources. Every finding states **what was checked, the evidence used, the rule applied and the action required**.
+Pravah AI tracks every approval application from submission to the recorded outcome, and every approved institution's obligations afterwards. Applications move automatically through their configured stage combination (Only Scrutiny, Scrutiny + EVC, EVC + SAC/SHC, Only EVC); each stage visit has a timeline, reminders and an escalation ladder; Regional, Bureau, committee and competent-authority users each get a dashboard of what is pending, ageing or overdue; Expert Visit Committees are scheduled and tracked; time-bound undertakings and document validity (lease deed, fire NOC, …) are monitored with online submission and official verification; and every movement, alert and decision is in an append-only audit trail. The document-scrutiny tooling — extraction, OCR, versioned validation rules and issuer verification, where every finding states **what was checked, the evidence used, the rule applied and the action required** — supports the scrutiny stage.
 
-> **Decision support only.** Pravah AI's outputs are not an official AICTE approval, not a definitive finding of fraud, and not a substitute for inspection or statutory scrutiny. Final regulatory decisions remain with competent authorities. "Pravah AI" is a prototype name; it is not an official AICTE product. **All data is synthetic** and no official verification source is connected.
+> **Decision support only.** Automation routes, tracks and reminds; it never replaces statutory scrutiny or a regulatory decision. Every stage is completed, every application returned or reverted, and every outcome recorded by an authorised official. Pravah AI's outputs are not an official AICTE approval, not a definitive finding of fraud, and not a substitute for inspection. "Pravah AI" is a prototype name; it is not an official AICTE product. **All data is synthetic**, no official verification source is connected, and the pathways, timelines and escalation thresholds are **sample configuration, not values taken from the AICTE Approval Process Handbook (APH)** — configure them per the applicable APH before any real use.
 
 ---
 
 ## Contents
 
 1. [What it does](#what-it-does)
+   - [Approval workflow and monitoring (PS 26262)](#approval-workflow-and-monitoring-ps-26262)
+   - [Scrutiny-stage document intelligence](#scrutiny-stage-document-intelligence)
 2. [Quick start](#quick-start)
 3. [Deploy (Railway)](#deploy-railway)
 4. [Demo accounts](#demo-accounts)
@@ -27,13 +29,29 @@ Pravah AI helps authorised personnel validate institutional applications and the
 14. [Troubleshooting](#troubleshooting)
 15. [Known limitations](#known-limitations)
 
-See also: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/FEATURES.md`](docs/FEATURES.md) (implemented vs. future) · [`docs/DEMO.md`](docs/DEMO.md) (5-minute demo script).
+See also: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/FEATURES.md`](docs/FEATURES.md) (PS 26262 coverage, implemented vs. future) · [`docs/DEMO.md`](docs/DEMO.md) (demo script).
 
 ---
 
 ## What it does
 
-Workflow: **Application → Documents → Validation → Verification → Review**
+### Approval workflow and monitoring (PS 26262)
+
+Pathway: **Submission → (Preliminary checks | Scrutiny) → EVC → SAC/SHC → Competent authority → Compliance monitoring**, with only the stages the application type's pathway prescribes.
+
+| PS 26262 area | How Pravah AI does it |
+|---|---|
+| **A. Workflow automation** | Each application type is routed to a processing pathway (*Workflow & Timelines*, admin-editable). On submission the engine stores the pathway, opens the first stage with its due date (shorter timelines for new institutions) and notifies the responsible desk and the institution in standard wording. Completing a stage (forward, EVC report, SAC/SHC outcome) moves the application to the next prescribed stage automatically; pathways without a scrutiny desk leave **preliminary checks by themselves** when the automated checks pass and issuer verification is complete. Authorised officials can **return** an application to the institution from any stage (re-entry is at **re-scrutiny**, and stages already completed are not repeated) or **revert** it to an earlier stage, always with recorded reasons. Each application's **Workflow** tab is its electronic case summary: pathway tracker, stage history (entered, due, completed by, outcome, days, remarks), EVC report and compliance items. |
+| **B. Dashboards and pendency** | **Pendency Monitor**: Region × stage matrix (overdue highlighted), ageing buckets per stage, workload by desk, bottlenecks (average days and share within timeline per stage), Region-wise performance, and a filterable case list with days in stage and days left. Role dashboards: Regional officer (own Region only), Approval Bureau (all Regions, EVC queue, escalations), committee member (my visits, reports due, SAC/SHC cases), competent authority (decisions awaiting, escalations). Every number is computed from stored stage visits. |
+| **C. EVC scheduling** | Applications entering the EVC stage join the **EVC queue** with a schedule-by date. The Bureau or Regional office schedules the visit (date, convenor, members; rescheduling needs a reason); the convenor and the institution are told. The convenor files the report on or after the visit; *satisfactory / not satisfactory* moves the application on, *deficiencies* returns it to the institution. Reminders before the visit, overdue alerts for unscheduled visits and late reports, and escalation. |
+| **D. Time-bound undertakings** | The competent authority can attach an undertaking (condition, evidence expected, due date) when recording the outcome, or any time from the Compliance Monitor. The institution sees it in its portal, uploads evidence online (type-checked, hashed), and an official verifies or returns it with remarks. Reminders at two thresholds before the due date, overdue alerts and escalation. |
+| **E. Lease / document validity** | A register of prescribed documents (lease deed, fire NOC, building stability, occupancy, accreditation) with validity dates; fire NOC and accreditation dates are added automatically from the extracted certificates when an outcome is recorded. Advance alerts at two thresholds, renewal upload with the new validity date, official verification that moves the register forward, and escalation once expired. |
+| **F. Notifications, escalation, reports** | An idempotent **alert sweep** (on a schedule, or on demand by an administrator) raises reminders, overdue alerts and escalations — responsible desk → Approval Bureau (level 2) → competent authority (level 3) — and closes them once the work is done. Every alert is stored (who it went to, when, resolved when), escalations can be acknowledged with the action taken, and consolidated **reports** (pendency, overdue, EVC, undertakings, document validity, Region-wise, alert log) are available on screen, as CSV and as one PDF. |
+| **Key requirements** | Timelines, reminder and escalation thresholds and type → pathway routing are configurable and audited; RBAC is enforced on the server for every page, action and download, with Regional officers scoped to their Region; files are stored privately with SHA-256 hashes; the audit trail is append-only at the database level. |
+
+### Scrutiny-stage document intelligence
+
+Scrutiny tooling: **Documents → Validation → Verification → Review**
 
 | Capability | How |
 |---|---|
@@ -44,7 +62,7 @@ Workflow: **Application → Documents → Validation → Verification → Review
 | Human review | Review queue, resolve / dismiss / request information / escalate / internal notes. Every action requires a reason and is audited. |
 | Rectification | Officers return specific findings; institutions replace evidence (versions retained) and resubmit; validation re-runs and shows a result-by-result diff. Replacing one document never clears an unrelated finding. |
 | Recorded decisions | Senior officials record an outcome with reasons and a reference, labelled as a *recorded human review action*. |
-| Audit, reports, alerts | Append-only audit log (DB triggers block UPDATE/DELETE), CSV exports, PDF/JSON validation report, in-app notifications. |
+| Audit, reports, notifications | Append-only audit log (DB triggers block UPDATE/DELETE), CSV exports, PDF/JSON validation report, in-app notifications. |
 
 ### Look and feel
 
@@ -52,10 +70,12 @@ Three brand colours, taken from the dashboard artwork, are used across the site:
 
 | Role | Colour | Portal name | Dashboard focus |
 |---|---|---|---|
-| Institution Applicant | Green | Institution Portal | My applications, rectification requests with due dates, "What you need to do" |
-| Scrutiny & Verification Officer | Royal blue | Scrutiny & Verification Desk | Work queues (validation, review, verification), attention list, recent activity |
-| Senior Official | Saffron | Competent Authority Desk | Applications awaiting a decision (with the forwarding note), recent decisions |
-| Administrator | Dark blue + saffron | Administration Console | Users, rules, sources, audit volume, configuration changes |
+| Institution Applicant | Green | Institution Portal | My applications, corrections and compliance deadlines, EVC visit dates, "What you need to do" |
+| Regional Officer (Scrutiny & Verification) | Royal blue | Regional Office · Scrutiny Desk | Work queues, approaching and overdue stages, escalations (own Region when assigned one) |
+| Approval Bureau Officer | Teal | Approval Bureau · Monitoring | Pendency KPIs, Region × stage matrix, EVC queue, escalations, approaching/overdue cases |
+| EVC / Committee Member | Blue | Committee Desk (EVC · SAC/SHC) | My expert visits, reports due, cases before SAC/SHC |
+| Competent Authority | Saffron | Competent Authority Desk | Applications awaiting a decision, Region × stage matrix, escalations, recent decisions |
+| Administrator | Dark blue + saffron | Administration Console | Users and Regions, workflow pathways and timelines, rules, sources, configuration changes |
 
 Navigation is a horizontal top bar: a gradient header in the role's colour (brand, search, notifications, account) above a frosted row of section links; the active section is a filled pill. Statistic tiles use colour-gradient icons (blue, saffron, teal, green). Every page, including both sign-in pages, sits on the project artwork (`public/backgrounds/pravah-backdrop.webp`: a campus, a map of India and a document being checked, with a tricolour wave). Pages use the full screen width. Cards, panels, menus and both header rows are translucent frosted glass in the style of macOS/iOS materials (light white fill, heavy blur with a gentle saturation boost, bright hairline edge), so the artwork stays visible everywhere while text keeps its contrast. The artwork contains no state emblem or seal: the emblem in the source image was replaced with a neutral shield-and-check mark, because the State Emblem of India may not be used without authorisation and the prototype must not look like an official government product.
 
@@ -117,12 +137,15 @@ Password for every account: **`Pravah@Demo2026`** (stored as scrypt hashes; each
 
 | Role | Email | Use it to… |
 |---|---|---|
-| Scrutiny & Verification Officer | `scrutiny@pravah.demo` | run validation and issuer verification, record manual confirmation, review all findings (rules, anomalies, verification), request rectification, forward |
-| Senior Official / Competent Authority | `senior@pravah.demo` | record the authorised review outcome |
-| System / Rules Administrator | `admin@pravah.demo` | users, versioned rules, issuer sources, settings |
-| Institution Applicant | `applicant.<slug>@pravah.demo` | upload / replace documents, view results, submit rectification |
+| Regional Officer (all Regions) | `scrutiny@pravah.demo` | scrutiny: run validation and issuer verification, record manual confirmation, review findings, return for rectification, forward along the pathway; schedule EVCs; verify compliance evidence |
+| Regional Officer (Southern Region) | `ro.south@pravah.demo` | the same desk, limited to the Southern Region's institutions, pendency and alerts |
+| Approval Bureau Officer | `bureau@pravah.demo` | pendency across Regions, EVC scheduling, undertakings and document validity, return or revert, escalations, consolidated reports |
+| EVC / Committee Member | `committee@pravah.demo` (convenor), `committee2@pravah.demo` | submit the EVC report for visits they convene; record SAC/SHC outcomes |
+| Competent Authority | `senior@pravah.demo` | record the outcome (optionally with a time-bound undertaking), revert to an earlier stage, acknowledge escalations |
+| Administrator | `admin@pravah.demo` | users and Regions, workflow pathways and timelines, rules, issuer sources, settings, alert sweep |
+| Institution Applicant | `applicant.<slug>@pravah.demo` | upload / replace documents, view results, submit rectification, submit compliance evidence |
 
-One officer role handles both scrutiny and issuer verification: the system checks every document automatically, and the officer only reviews the exceptions it cannot decide. Separation of duties is kept between the institution (submits), the officer (checks and forwards), the senior official (decides) and the administrator (configures).
+Separation of duties: the institution submits; the Regional officer scrutinises and forwards; the Bureau schedules visits, monitors and verifies compliance; the committee reports and recommends; the competent authority decides; the administrator configures. Nothing in the workflow takes a regulatory decision on its own.
 
 Institution accounts in the compact demo: `applicant.meridian@pravah.demo`, `applicant.northfield@pravah.demo` and `applicant.greenfield@pravah.demo`. Each can only see its own institution's records.
 
@@ -137,6 +160,7 @@ Institution users get their own simpler area (green-to-teal header, fewer sectio
 | **New application** | Details pre-filled from the institutional record; then goes straight to document upload |
 | **Application page** | Plain-language status and next step. **Overview**: recorded outcome (if any), correction request with "Upload replacement" and **Submit corrections and revalidate**, issues to fix with "What you need to do", verification status (labelled simulated). **Documents**: checklist with upload / replace / withdraw. **Check results**: failed and passed checks with "What changed since" the previous check. **History**: status timeline, correction requests and AICTE actions (internal notes hidden) |
 | **Document page** | What the system read from the document, highlighted on the page; replace or download |
+| **Compliance** (`/portal/compliance`) | Undertakings and document validity for the institution: what is due, online upload of evidence or the renewed document (with its new validity date), verification result and remarks |
 | **Help** | How the process works, what each status means, required documents per application type, FAQ |
 
 Institution users who open an official-area link (for example from an old notification) are sent to the matching portal page; officials cannot open the portal.
@@ -150,6 +174,8 @@ The seed builds every application **through the real pipeline** (rendered synthe
 | PRV-2027-000001 | Meridian Institute of Management | Expired certificate | Automated checks failed | NOC valid until 31/03/2027 does not cover the AY 2027-28 start (01/07/2027): demo rule `DATE-VAL-001` v2. Return it for rectification; the institution uploads `samples/meridian-fire-noc-renewed.pdf`; revalidation passes; verify, forward, decide |
 | PRV-2027-000002 | Northfield School of Architecture | Issuer mismatch | Review required | The simulated registry's validity (09/01/2028) differs from the certificate (09/01/2031). Review the finding, then record a **manual confirmation** on Issuer verification before forwarding |
 | PRV-2027-000003 | Greenfield College of Engineering | Draft | Draft | The institution uploads `greenfield-faculty-statement.pdf` and `greenfield-built-up-area.pdf`, runs the checks (all pass), then officer → issuer verification → forward → senior official → closed |
+
+**Background cases for monitoring.** Thirteen further synthetic applications across the four demo Regions are driven through the real stage engine with backdated times, so the monitoring screens have content: cases at scrutiny (on track, overdue, escalated to level 3), in the EVC queue (one overdue for scheduling), with a visit scheduled or held and the report due, at SAC/SHC, at the competent authority, returned to the institution, and closed. They carry no uploaded documents (the story applications cover document validation). Compliance items cover a lease deed due for renewal (Greenfield — renew it from the portal), undertaking evidence awaiting verification (Northfield), an overdue undertaking and an expired fire NOC escalated to level 3 (Deccan School of Planning), and more. The seed finishes with an alert sweep. Dates are relative to the day you seed.
 
 `DEMO_DATASET=full npm run db:reset` seeds six more scenarios: a clean application, a missing document, a cross-document mismatch, a scanned (OCR) NOC with pending/unavailable sources, duplicate and suspicious-metadata indicators, and an application ready for authorised review. The automated tests always use the full dataset.
 
@@ -197,6 +223,7 @@ See [`.env.example`](.env.example). Placeholders only — never commit real secr
 | `SESSION_TTL_HOURS` | `12` | Session lifetime. |
 | `COOKIE_SECURE` | `false` | Set `true` behind HTTPS. |
 | `DEMO_MODE` | `true` | Show demo accounts on the sign-in page. |
+| `ALERT_SWEEP_INTERVAL_MINUTES` | `60` | Minutes between automatic alert sweeps in the server process; `0` disables the scheduler (administrators can still run a sweep from Alerts). |
 | `OCR_ENABLED` | `true` | `false` disables OCR (scanned documents then fail with an explicit message). |
 | `OCR_LANG_PATH` | — | Override Tesseract language-data directory. |
 | `OFFICIAL_ISSUER_API_URL`, `OFFICIAL_ISSUER_API_KEY`, `OFFICIAL_ISSUER_NAME`, `OFFICIAL_ISSUER_CATEGORIES`, `OFFICIAL_ISSUER_SOURCE_TYPE` | blank | Official verification provider. Inactive unless URL, key and categories are all set. |
@@ -253,9 +280,9 @@ The executor applies a per-attempt timeout and bounded retries (at most 5 attemp
 
 | Suite | Command | What it covers |
 |---|---|---|
-| Unit (65) | `npm test` | Date parsing, normalisation, field extraction, upload validation, every rule check type, status derivation, transitions, run diff, verification adapters (all outcomes, timeout, bounded retries), permissions, anomaly detection, AI fallback (tokenizer ids/offsets, each acceptance safeguard, rules treating AI values as unconfirmed, and the real model on the sample PDFs — skipped if the model is not installed) |
-| Integration (26) | `npm test` | Real SQLite DB seeded through the real pipeline: auth and rate limiting, isolation, application creation, upload rejection, PDF/PNG/scanned-PDF processing, validation persistence, corrections, verification (outage, unsupported, manual), review reasons, rectification (unrelated findings preserved, corrected findings cleared), forward/decision, append-only audit, report redaction |
-| E2E (9) | `npm run test:e2e` | Runs against a production build. Sign-in failures, separate sign-in portals, section tabs navigating on click in both portals, server-side RBAC and cross-institution isolation, upload rejection, the full journey (findings → rectification → replacement → revalidation diff → simulated verification → forward → recorded decision → audit trail → PDF report), upload to closing (Greenfield draft → uploads → checks → verification → forward → decision → closed), issuer mismatch (forward blocked until a manual confirmation, then closed), and the AI fallback (prose certificate → AI suggestions → review → officer confirmation → PASS; skipped without the model) |
+| Unit (76) | `npm test` | Pathway stages (preliminary step, the four stage combinations, next stage skipping completed stages, re-entry, revert targets, re-scrutiny label), due states, ageing buckets and the escalation ladder; date parsing, normalisation, field extraction, upload validation, every rule check type, status derivation, transitions, run diff, verification adapters (all outcomes, timeout, bounded retries), permissions, anomaly detection, AI fallback (tokenizer ids/offsets, each acceptance safeguard, rules treating AI values as unconfirmed, and the real model on the sample PDFs — skipped if the model is not installed) |
+| Integration (45) | `npm test` | Real SQLite DB seeded through the real pipeline. Workflow and monitoring: pathway assignment, new-institution timelines, Region scoping, automatic routing out of preliminary checks, EVC scheduling and report rules, SAC/SHC outcome, decision with a tracked undertaking, return and re-scrutiny, revert, renewed-document submission and verification, returned evidence, idempotent and escalating alert sweeps, configurable timelines. Scrutiny tooling: auth and rate limiting, isolation, application creation, upload rejection, PDF/PNG/scanned-PDF processing, validation persistence, corrections, verification (outage, unsupported, manual), review reasons, rectification (unrelated findings preserved, corrected findings cleared), forward/decision, append-only audit, report redaction |
+| E2E (10) | `npm run test:e2e` | Runs against a production build. Approval monitoring (Bureau pendency → EVC scheduling → escalation visible → convenor files the report and the application moves on → institution renews its lease deed online → Bureau verifies it). Sign-in failures, separate sign-in portals, section tabs navigating on click in both portals, server-side RBAC and cross-institution isolation, upload rejection, the full journey (findings → rectification → replacement → revalidation diff → simulated verification → forward → recorded decision → audit trail → PDF report), upload to closing (Greenfield draft → uploads → checks → verification → forward → decision → closed), issuer mismatch (forward blocked until a manual confirmation, then closed), and the AI fallback (prose certificate → AI suggestions → review → officer confirmation → PASS; skipped without the model) |
 
 ## Security
 
@@ -289,4 +316,7 @@ The executor applies a per-attempt timeout and bounded retries (at most 5 attemp
 - Image analysis is limited to a preliminary evidence note (dimensions/resolution); physical infrastructure compliance is not assessed.
 - Processing is synchronous, which is suitable for prototype-sized files; the services are structured so a job queue can be added later.
 - Database-level immutability of the audit log relies on SQLite triggers, which a DB administrator could still drop. Production should add access controls and/or write-once storage.
-- The in-memory login rate limiter is per process. E-mail notifications are not implemented; notifications are in-app only.
+- The in-memory login rate limiter is per process. E-mail and SMS are not implemented; notifications and alerts are in-app only.
+- **Workflow configuration is sample data.** Pathways, application-type routing, stage timelines, reminder and escalation thresholds are illustrative and not taken from the APH; Regions and their states are demo groupings. EVC report-overdue and scheduling escalation thresholds (3 and 5 days) are fixed in code.
+- The alert sweep runs inside the web server process (one replica); a production deployment would run it as a scheduled job.
+- Background monitoring cases have no uploaded documents; officers can open them but running validation on them reports the missing documents.

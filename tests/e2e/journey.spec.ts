@@ -208,7 +208,7 @@ test("full journey: findings → rectification → revalidation → verification
   await page.goto(`/applications/${id}`);
   await openDialog(page, page.getByRole("button", { name: "Record review outcome" }));
   const d = page.getByRole("dialog");
-  await d.locator("select").selectOption("SATISFACTORY_FOR_FURTHER_PROCESSING");
+  await d.locator("select[name=outcome]").selectOption("SATISFACTORY_FOR_FURTHER_PROCESSING");
   await d.locator("textarea").fill("Scrutiny satisfactory on documentary evidence; forward for statutory processing.");
   await d.locator("input[name=reference]").fill("PRV/SO/2026/118");
   await d.getByRole("button", { name: "Record outcome" }).click();
@@ -267,7 +267,7 @@ test("upload to closing: an institution completes its draft and it is checked, v
   await page.goto(`/applications/${id}`);
   await openDialog(page, page.getByRole("button", { name: "Record review outcome" }));
   const d = page.getByRole("dialog");
-  await d.locator("select").selectOption("SATISFACTORY_FOR_FURTHER_PROCESSING");
+  await d.locator("select[name=outcome]").selectOption("SATISFACTORY_FOR_FURTHER_PROCESSING");
   await d.locator("textarea").fill("Documentary scrutiny satisfactory; proceed to statutory processing.");
   await d.locator("input[name=reference]").fill("PRV/SO/2026/201");
   await d.getByRole("button", { name: "Record outcome" }).click();
@@ -325,7 +325,7 @@ test("issuer mismatch: resolving the finding is not enough; a manual confirmatio
   await page.goto(`/applications/${id}`);
   await openDialog(page, page.getByRole("button", { name: "Record review outcome" }));
   const d = page.getByRole("dialog");
-  await d.locator("select").selectOption("SATISFACTORY_FOR_FURTHER_PROCESSING");
+  await d.locator("select[name=outcome]").selectOption("SATISFACTORY_FOR_FURTHER_PROCESSING");
   await d.locator("textarea").fill("Satisfactory on documentary evidence after manual confirmation of accreditation.");
   await d.locator("input[name=reference]").fill("PRV/SO/2026/202");
   await d.getByRole("button", { name: "Record outcome" }).click();
@@ -383,4 +383,69 @@ test("local AI suggests fields from a prose certificate; rules wait for an offic
   expect(after.explanation).toContain("Valid until 02 Mar 2029");
   const audit = await db.auditEvent.findFirst({ where: { applicationId: id, action: "Confirmed AI suggestion for Expiry date" } });
   expect(audit).not.toBeNull();
+});
+
+test("approval workflow monitoring: Bureau schedules an EVC, the convenor reports, and the institution renews a lease deed online", async ({ page }) => {
+  const godavari = await appId("Godavari");
+  const today = new Date().toISOString().slice(0, 10);
+
+  // 1. The Approval Bureau sees pendency across Regions and schedules a visit from the EVC queue.
+  await signIn(page, "bureau@pravah.demo");
+  await expect(page.getByText("Region × stage pendency")).toBeVisible();
+  await page.goto("/pendency");
+  await expect(page.getByText("Overdue at their stage")).toBeVisible();
+  await expect(page.getByText("Brahmaputra College of Engineering").first()).toBeVisible();
+  await page.goto("/evc");
+  const row = page.locator("tr").filter({ hasText: "Konkan Institute of Technology" }).first();
+  const dialog = await openDialog(page, row.getByRole("button", { name: "Schedule visit" }));
+  await dialog.locator("input[name=visitDate]").fill(today);
+  const convenor = await db.user.findUniqueOrThrow({ where: { email: "committee@pravah.demo" } });
+  await dialog.locator("select[name=convenorId]").selectOption(convenor.id);
+  await dialog.getByRole("button", { name: "Schedule visit" }).click();
+  await expectToast(page, "Expert visit scheduled");
+
+  // 2. The escalation for the late scheduling is visible and can be acknowledged.
+  await page.goto("/alerts");
+  await expect(page.getByText(/Escalated.*PRV-2027/).first()).toBeVisible();
+
+  // 3. The EVC convenor submits the report for a visit already held; the application moves on by itself.
+  await signIn(page, "committee@pravah.demo");
+  await expect(page.getByRole("heading", { name: "My expert visits" })).toBeVisible();
+  await page.goto(`/applications/${godavari}?tab=workflow`);
+  const report = await openDialog(page, page.getByRole("button", { name: "Submit report" }));
+  await report.locator("select[name=recommendation]").selectOption("SATISFACTORY");
+  await report.locator("textarea[name=summary]").fill("Infrastructure, laboratories and faculty records verified against the application.");
+  await report.locator("input[name=reference]").fill("EVC/E2E/2026/1");
+  await report.getByRole("button", { name: "Submit report" }).click();
+  await expectToast(page, "EVC report submitted");
+  await expect.poll(async () => (await db.application.findUniqueOrThrow({ where: { id: godavari } })).currentStage).toBe("DECISION");
+
+  // 4. The institution sees its compliance deadline and uploads the renewed lease deed.
+  await signIn(page, "applicant.greenfield@pravah.demo");
+  await expect(page.getByText("Document renewal due").first()).toBeVisible();
+  await page.goto("/portal/compliance");
+  await page.getByRole("link", { name: /Lease deed — campus land/ }).first().click();
+  await expect(page.getByRole("heading", { name: "Submit the renewed document" })).toBeVisible();
+  const input = page.locator("#evidence-file");
+  await expect(async () => {
+    await input.setInputFiles([]);
+    await input.setInputFiles(sample("meridian-fire-noc-renewed.pdf"));
+    await expect(page.getByText("meridian-fire-noc-renewed.pdf")).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  await page.fill("#evidence-valid", "2056-12-31");
+  await page.fill("#evidence-note", "Lease extended by 30 years; registered deed attached.");
+  await page.getByRole("button", { name: "Submit for verification" }).click();
+  await expectToast(page, "Evidence submitted");
+  const item = await db.complianceItem.findFirstOrThrow({ where: { typeCode: "LEASE_DEED", institution: { name: { contains: "Greenfield" } } } });
+  await expect.poll(async () => (await db.complianceItem.findUniqueOrThrow({ where: { id: item.id } })).status).toBe("SUBMITTED");
+
+  // 5. The Bureau verifies it; the register moves to the new validity date.
+  await signIn(page, "bureau@pravah.demo");
+  await page.goto(`/compliance-monitor/${item.id}`);
+  const verify = await openDialog(page, page.getByRole("button", { name: "Verify" }));
+  await verify.locator("textarea").fill("Registered deed checked against the sub-registrar record.");
+  await verify.getByRole("button", { name: "Verify" }).click();
+  await expectToast(page, "Evidence verified");
+  const after = await db.complianceItem.findUniqueOrThrow({ where: { id: item.id } });
+  expect([after.status, after.dueDate.toISOString().slice(0, 10)]).toEqual(["OPEN", "2056-12-31"]);
 });

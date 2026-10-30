@@ -9,9 +9,12 @@ import { DECISION_SUPPORT_DISCLAIMER, ROLE_LABELS, type Role } from "@/lib/domai
 export const metadata = { title: "AICTE official sign-in" };
 
 const DEMO_ACCOUNTS: { email: string; role: Role; note: string }[] = [
-  { email: "scrutiny@pravah.demo", role: "SCRUTINY_OFFICER", note: "Validation, issuer verification, manual confirmation, findings, rectification, forwarding." },
-  { email: "senior@pravah.demo", role: "SENIOR_OFFICIAL", note: "Records the authorised review outcome." },
-  { email: "admin@pravah.demo", role: "ADMIN", note: "Users, versioned rules, issuer sources, settings." },
+  { email: "scrutiny@pravah.demo", role: "SCRUTINY_OFFICER", note: "All Regions. Scrutiny: validation, issuer verification, findings, return for rectification, forwarding along the pathway." },
+  { email: "ro.south@pravah.demo", role: "SCRUTINY_OFFICER", note: "Southern Region only — the same desk, scoped to one Region's institutions, pendency and alerts." },
+  { email: "bureau@pravah.demo", role: "BUREAU_OFFICER", note: "Pendency across Regions, EVC scheduling, undertakings and document validity, escalations, consolidated reports." },
+  { email: "committee@pravah.demo", role: "COMMITTEE_MEMBER", note: "EVC convenor: scheduled visits and reports; records SAC/SHC outcomes." },
+  { email: "senior@pravah.demo", role: "SENIOR_OFFICIAL", note: "Competent authority: records the outcome, sees escalations, may revert a stage." },
+  { email: "admin@pravah.demo", role: "ADMIN", note: "Users and Regions, workflow pathways and timelines, rules, issuer sources, settings." },
 ];
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
@@ -29,30 +32,30 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <BrandMark inverted className="size-9" />
             <div>
               <p className="text-base font-semibold">Pravah AI</p>
-              <p className="text-xs text-white/80">Application Validation &amp; Compliance Intelligence</p>
+              <p className="text-xs text-white/80">Approval Workflow, Compliance Monitoring &amp; Alerts</p>
             </div>
           </div>
         </div>
         <div className="px-6 py-5">
-          <h1 className="text-xl font-semibold tracking-tight text-ink">Evidence-linked validation of institutional applications</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-ink">One tracked workflow from submission to compliance</h1>
           <p className="mt-2 text-[13px] leading-relaxed text-ink-2">
-            Documents are read automatically, checked against versioned rules and issuing sources, and only the exceptions go to a human — with every step recorded.
+            Applications move automatically through their configured stages — scrutiny, expert visit, SAC/SHC and the competent authority — with timelines, reminders and escalation. Undertakings and document validity are tracked after approval. Every decision stays with an authorised official, and every step is recorded.
           </p>
           <ol className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[13px] text-ink-2">
-            {["Application", "Documents", "Validation", "Verification", "Review"].map((s, i) => (
+            {["Submission", "Scrutiny", "EVC", "SAC/SHC", "Decision", "Compliance"].map((s, i) => (
               <li key={s} className="flex items-center gap-2">
                 <span className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent">{i + 1}</span>
                 {s}
               </li>
             ))}
           </ol>
-          <p className="mt-5 border-t border-border pt-3 text-[11px] leading-relaxed text-muted">{DECISION_SUPPORT_DISCLAIMER} Prototype for SIH 2026 PS 26261; not an official AICTE system. Demo environment — all data is synthetic.</p>
+          <p className="mt-5 border-t border-border pt-3 text-[11px] leading-relaxed text-muted">{DECISION_SUPPORT_DISCLAIMER} Prototype for SIH 2026 PS 26262; not an official AICTE system. Demo environment — all data is synthetic.</p>
         </div>
       </section>
       <div className="glass order-1 w-full max-w-md rounded-xl p-5 sm:p-6 lg:order-2">
         <PortalSwitch current="OFFICIAL" />
         <h2 className="mt-6 text-lg font-semibold text-ink">AICTE official sign-in</h2>
-        <p className="mt-1 text-xs text-muted">For scrutiny &amp; verification officers, competent authorities and administrators. Institutions use the <a href="/institution/login" className="font-medium text-green underline">Institution login</a>.</p>
+        <p className="mt-1 text-xs text-muted">For Regional and Bureau officers, committee members, competent authorities and administrators. Institutions use the <a href="/institution/login" className="font-medium text-green underline">Institution login</a>.</p>
         <LoginForm next={next ?? "/"} portal="OFFICIAL" />
         {demo && (
           <div className="mt-8 rounded-lg border border-border bg-surface">

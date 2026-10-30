@@ -187,9 +187,9 @@ export async function correctField(actor: Actor, fieldId: string, value: string,
   const trimmed = value.trim();
   if (reason.trim().length < 5) throw new DomainError("A reason of at least 5 characters is required.");
   if (trimmed.length > 300) throw new DomainError("Value too long.");
-  const field = await prisma.extractedField.findUnique({ where: { id: fieldId }, include: { version: { include: { document: { include: { application: true } } } } } });
+  const field = await prisma.extractedField.findUnique({ where: { id: fieldId }, include: { version: { include: { document: { include: { application: { include: { institution: { select: { regionId: true } } } } } } } } } });
   if (!field) throw new NotFoundError();
-  assertInstitutionAccess(actor, field.version.document.application.institutionId);
+  assertInstitutionAccess(actor, field.version.document.application.institutionId, field.version.document.application.institution.regionId);
   if (!field.version.isCurrent) throw new DomainError("Only fields of the current document version can be corrected.");
   const def = FIELD_BY_KEY.get(field.key);
   if (def && trimmed && ["date", "integer", "academicYear"].includes(def.type)) {
@@ -211,14 +211,14 @@ export async function getAccessibleDocument(actor: Actor, documentId: string) {
     include: { application: { include: { institution: true } }, category: true, versions: { orderBy: { versionNo: "desc" }, include: { fields: { orderBy: { key: "asc" } } } } },
   });
   if (!doc) throw new NotFoundError();
-  assertInstitutionAccess(actor, doc.application.institutionId);
+  assertInstitutionAccess(actor, doc.application.institutionId, doc.application.institution.regionId);
   return doc;
 }
 
 async function getAccessibleVersion(actor: Actor, versionId: string) {
-  const v = await prisma.documentVersion.findUnique({ where: { id: versionId }, include: { document: { include: { application: true } } } });
+  const v = await prisma.documentVersion.findUnique({ where: { id: versionId }, include: { document: { include: { application: { include: { institution: { select: { regionId: true } } } } } } } });
   if (!v) throw new NotFoundError();
-  assertInstitutionAccess(actor, v.document.application.institutionId);
+  assertInstitutionAccess(actor, v.document.application.institutionId, v.document.application.institution.regionId);
   return v;
 }
 

@@ -2,15 +2,15 @@
 import { z } from "zod";
 import { assertPermission, DomainError, NotFoundError, type Actor } from "@/lib/auth/permissions";
 import { hashPassword, passwordPolicyError } from "@/lib/auth/password";
-import { ACTIVE_FINDING_STATUSES, ROLES } from "@/lib/domain";
+import { ROLES } from "@/lib/domain";
 import { prisma } from "./db";
-import { recordAudit, SYSTEM } from "./audit";
-import { notifyRoles } from "./notifications";
+import { recordAudit } from "./audit";
+import { runAlertSweep } from "./alerts";
 import { getSettings, SETTING_DEFS, type SettingKey } from "./settings";
 
 export async function listUsers(actor: Actor) {
   assertPermission(actor, "users.manage");
-  return prisma.user.findMany({ orderBy: [{ role: "asc" }, { name: "asc" }], select: { id: true, email: true, name: true, designation: true, role: true, active: true, lastLoginAt: true, institution: { select: { id: true, name: true } } } });
+  return prisma.user.findMany({ orderBy: [{ role: "asc" }, { name: "asc" }], select: { id: true, email: true, name: true, designation: true, role: true, active: true, lastLoginAt: true, regionId: true, institution: { select: { id: true, name: true } }, region: { select: { id: true, name: true } } } });
 }
 
 const CreateUserSchema = z.object({
@@ -19,8 +19,16 @@ const CreateUserSchema = z.object({
   designation: z.string().trim().max(120).optional(),
   role: z.enum(ROLES),
   institutionId: z.string().optional().transform((v) => v || null),
+  regionId: z.string().optional().transform((v) => v || null),
   password: z.string().min(1),
 });
+
+/** Only Regional officers are scoped to a Region; everyone else sees all Regions. */
+async function checkRegion(role: string, regionId: string | null) {
+  if (!regionId) return;
+  if (role !== "SCRUTINY_OFFICER") throw new DomainError("Only Regional officers are assigned to a Region.");
+  if (!(await prisma.region.findUnique({ where: { id: regionId } }))) throw new DomainError("Unknown Region.");
+}
 
 export async function createUser(actor: Actor, input: z.input<typeof CreateUserSchema>) {
   assertPermission(actor, "users.manage");
@@ -29,14 +37,15 @@ export async function createUser(actor: Actor, input: z.input<typeof CreateUserS
   if (pwErr) throw new DomainError(pwErr);
   if (data.role === "APPLICANT" && !data.institutionId) throw new DomainError("Applicant accounts must be linked to an institution.");
   if (data.role !== "APPLICANT" && data.institutionId) throw new DomainError("Only applicant accounts are linked to an institution.");
+  await checkRegion(data.role, data.regionId);
   if (await prisma.user.findUnique({ where: { email: data.email } })) throw new DomainError("A user with this email already exists.");
   await prisma.$transaction(async (tx) => {
-    const u = await tx.user.create({ data: { email: data.email, name: data.name, designation: data.designation || null, role: data.role, institutionId: data.institutionId, passwordHash: await hashPassword(data.password) } });
-    await recordAudit({ actor, eventType: "USER_CREATED", action: `Created user ${u.email} (${u.role})`, after: { email: u.email, role: u.role, institutionId: u.institutionId } }, tx);
+    const u = await tx.user.create({ data: { email: data.email, name: data.name, designation: data.designation || null, role: data.role, institutionId: data.institutionId, regionId: data.regionId, passwordHash: await hashPassword(data.password) } });
+    await recordAudit({ actor, eventType: "USER_CREATED", action: `Created user ${u.email} (${u.role})`, after: { email: u.email, role: u.role, institutionId: u.institutionId, regionId: u.regionId } }, tx);
   });
 }
 
-export async function updateUser(actor: Actor, userId: string, patch: { role?: string; active?: boolean }) {
+export async function updateUser(actor: Actor, userId: string, patch: { role?: string; active?: boolean; regionId?: string | null }) {
   assertPermission(actor, "users.manage");
   const u = await prisma.user.findUnique({ where: { id: userId } });
   if (!u) throw new NotFoundError();
@@ -44,10 +53,14 @@ export async function updateUser(actor: Actor, userId: string, patch: { role?: s
   const role = patch.role !== undefined ? z.enum(ROLES).parse(patch.role) : undefined;
   if (role && role !== "APPLICANT" && u.institutionId) throw new DomainError("Unlink the institution before changing an applicant to a staff role (create a new account instead).");
   if (role === "APPLICANT" && !u.institutionId) throw new DomainError("Staff accounts cannot become applicants; create an applicant account linked to an institution.");
+  const nextRole = role ?? u.role;
+  // A Region only applies to Regional officers; moving to another role clears it.
+  const regionId = patch.regionId !== undefined ? patch.regionId || null : nextRole === "SCRUTINY_OFFICER" ? u.regionId : null;
+  await checkRegion(nextRole, regionId);
   await prisma.$transaction(async (tx) => {
-    await tx.user.update({ where: { id: userId }, data: { ...(role ? { role } : {}), ...(patch.active !== undefined ? { active: patch.active } : {}) } });
+    await tx.user.update({ where: { id: userId }, data: { ...(role ? { role } : {}), ...(patch.active !== undefined ? { active: patch.active } : {}), regionId } });
     if (patch.active === false) await tx.session.deleteMany({ where: { userId } });
-    await recordAudit({ actor, eventType: "USER_UPDATED", action: `Updated user ${u.email}`, before: { role: u.role, active: u.active }, after: { role: role ?? u.role, active: patch.active ?? u.active } }, tx);
+    await recordAudit({ actor, eventType: "USER_UPDATED", action: `Updated user ${u.email}`, before: { role: u.role, active: u.active, regionId: u.regionId }, after: { role: nextRole, active: patch.active ?? u.active, regionId } }, tx);
   });
 }
 
@@ -81,16 +94,7 @@ export async function setIssuerSourceEnabled(actor: Actor, sourceId: string, ena
   await recordAudit({ actor, eventType: "ISSUER_SOURCE_UPDATED", action: `${s.name} ${enabled ? "enabled" : "disabled"}`, before: { enabled: s.enabled }, after: { enabled } });
 }
 
-/** Alert on unresolved HIGH/CRITICAL findings older than the configured threshold (deduplicated). */
+/** Run the alert and escalation sweep now (see src/server/alerts.ts). */
 export async function sweepAlerts(actor: Actor | null) {
-  if (actor) assertPermission(actor, "settings.manage");
-  const settings = await getSettings();
-  const cutoff = new Date(Date.now() - settings.highSeverityAlertDays * 86_400_000);
-  const aged = await prisma.finding.findMany({ where: { status: { in: ACTIVE_FINDING_STATUSES }, severity: { in: ["HIGH", "CRITICAL"] }, createdAt: { lte: cutoff }, application: { status: { not: "CLOSED" } } }, include: { application: { select: { reference: true } } } });
-  let sent = 0;
-  for (const f of aged) {
-    sent += await notifyRoles([f.assignedRole ?? "SCRUTINY_OFFICER"], { type: "AGEING_HIGH_SEVERITY", title: "Unresolved high-severity finding", body: `${f.application.reference}: ${f.title} (open since ${f.createdAt.toISOString().slice(0, 10)})`, link: `/review/${f.id}`, severity: f.severity, dedupeKey: `ageing:${f.id}` });
-  }
-  await recordAudit({ actor: actor ?? SYSTEM.alerts, eventType: "ALERT_SWEEP_RUN", action: `Alert sweep: ${aged.length} ageing high-severity finding(s), ${sent} notification(s) created` });
-  return { aged: aged.length, sent };
+  return runAlertSweep(actor);
 }

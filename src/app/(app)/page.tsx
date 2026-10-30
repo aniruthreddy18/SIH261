@@ -1,13 +1,15 @@
 import Link from "next/link";
 import {
   AlertOctagon, ArrowRight, BadgeCheck, CalendarClock, ClipboardCheck, FileClock, FilePlus2, FileWarning, FolderOpen, Gavel, History, Inbox,
-  ListChecks, Play, RadioTower, Settings, Upload, UserCheck, Users, Undo2,
+  ListChecks, Play, RadioTower, Settings, Upload, UserCheck, Users, Undo2, AlarmClock, BellRing, CalendarCheck, ClipboardList, Route, Siren, Timer,
 } from "lucide-react";
 import type { Actor } from "@/lib/auth/permissions";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ROLE_LABELS, type ApplicationStatus } from "@/lib/domain";
 import { DECISION_OUTCOMES, findingTypeLabel, REVIEW_ACTION_LABELS, type DecisionOutcome } from "@/lib/findings";
 import { ROLE_THEME } from "@/lib/role-theme";
+import { applicationTypeLabel, daysBetween, dueState, STAGE_SHORT } from "@/lib/workflow/stages";
+import { DueBadge, EscalationBadge } from "@/components/workflow/stage-ui";
 import { getDashboard, getRoleExtras } from "@/server/dashboard";
 import { requireActor } from "@/server/session";
 import { prisma } from "@/server/db";
@@ -135,7 +137,195 @@ export default async function Dashboard() {
   if (actor.role === "APPLICANT") return <ApplicantDashboard actor={actor} d={d} extras={extras} institution={institution?.name} />;
   if (actor.role === "SENIOR_OFFICIAL") return <SeniorDashboard actor={actor} d={d} extras={extras} />;
   if (actor.role === "ADMIN") return <AdminDashboard actor={actor} d={d} extras={extras} />;
-  return <OfficerDashboard actor={actor} d={d} />;
+  if (actor.role === "BUREAU_OFFICER") return <BureauDashboard actor={actor} extras={extras} />;
+  if (actor.role === "COMMITTEE_MEMBER") return <CommitteeDashboard actor={actor} extras={extras} />;
+  return <OfficerDashboard actor={actor} d={d} extras={extras} />;
+}
+
+type Monitor = NonNullable<Extras["monitor"]>;
+
+/** Workflow-monitoring KPIs shared by staff dashboards (pendency, EVC queue, escalations, compliance). */
+function MonitorTiles({ m }: { m: Monitor }) {
+  return (
+    <Tiles
+      tiles={[
+        { label: "In process at a stage", value: m.totals.inProcess, href: "/pendency", icon: <Timer />, hint: "Applications with an active processing stage" },
+        { label: "Overdue at their stage", value: m.totals.overdue, href: "/pendency?state=OVERDUE", icon: <AlarmClock />, hint: "Past the stage timeline (sample configuration)" },
+        { label: "Awaiting EVC scheduling", value: m.evcAwaitingTotal, href: "/evc", icon: <CalendarClock />, hint: "In the Expert Visit Committee queue without a visit date" },
+        { label: "Open escalations", value: m.escalationsTotal, href: "/alerts", icon: <Siren />, hint: "Escalated to the Bureau or the competent authority" },
+        { label: "Compliance overdue", value: m.complianceOverdue, href: "/compliance-monitor?state=overdue", icon: <ClipboardList />, hint: `Undertakings or document renewals past due · ${m.complianceAwaiting} submission(s) awaiting verification` },
+      ]}
+    />
+  );
+}
+
+function UrgentCases({ m }: { m: Monitor }) {
+  return (
+    <Card>
+      <CardHeader title="Approaching and overdue" description="Applications at a stage that is due soon or past its timeline, most urgent first." actions={<Link href="/pendency" className="text-xs font-medium text-accent hover:underline">Pendency monitor</Link>} />
+      {m.urgent.length === 0 ? <EmptyState icon={<Timer />} title="Every stage is on track" /> : (
+        <ul className="divide-y divide-border">
+          {m.urgent.map((c) => (
+            <li key={c.instanceId}>
+              <Link href={`/applications/${c.applicationId}?tab=workflow`} className="flex flex-wrap items-center gap-3 px-4 py-2.5 hover:bg-subtle/60">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-medium text-ink">{c.institutionName} <span className="font-mono text-xs font-normal text-muted">{c.reference}</span></p>
+                  <p className="truncate text-xs text-muted">{c.stageLabel} · {c.desk} · {c.daysInStage} d at stage · {c.regionName}</p>
+                </div>
+                <DueBadge state={c.state} daysLeft={c.daysLeft} />
+                <EscalationBadge level={c.escalationLevel} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function Escalations({ m }: { m: Monitor }) {
+  return (
+    <Card>
+      <CardHeader title="Open escalations" actions={<Link href="/alerts" className="text-xs font-medium text-accent hover:underline">Alerts</Link>} />
+      {m.escalations.length === 0 ? <p className="px-4 py-6 text-center text-xs text-muted">No open escalations.</p> : (
+        <ul className="divide-y divide-border">
+          {m.escalations.map((a) => (
+            <li key={a.id} className="flex items-start gap-2.5 px-4 py-2.5">
+              <Siren className={cn("mt-0.5 size-3.5 shrink-0", a.level >= 3 ? "text-bad" : "text-warn")} />
+              <div className="min-w-0 text-xs">
+                {a.link ? <Link href={a.link} className="font-medium text-ink hover:underline">{a.title}</Link> : <p className="font-medium text-ink">{a.title}</p>}
+                <p className="truncate text-muted">Level {a.level} · {relativeAge(a.createdAt)} ago{a.acknowledgedAt ? " · acknowledged" : ""}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function RegionMatrix({ m }: { m: Monitor }) {
+  return (
+    <Card>
+      <CardHeader title="Region × stage pendency" description="Applications at each stage now; the red figure is overdue." actions={<Link href="/pendency" className="text-xs font-medium text-accent hover:underline">Details</Link>} />
+      <div className="overflow-x-auto">
+        <table className="w-full text-[13px]">
+          <thead><tr className="border-b border-border text-xs text-muted"><th className="px-4 py-2 text-left font-medium">Region</th>{m.stages.map((s) => <th key={s} className="px-2 py-2 text-center font-medium">{STAGE_SHORT[s]}</th>)}</tr></thead>
+          <tbody>
+            {m.matrix.map((r) => (
+              <tr key={r.regionId} className="border-b border-border/60 last:border-0">
+                <td className="px-4 py-2 text-ink">{r.regionName}</td>
+                {r.cells.map((c) => (
+                  <td key={c.stage} className="px-2 py-2 text-center tabular">
+                    {c.total ? <Link href={`/pendency?region=${r.regionId}&stage=${c.stage}`} className="hover:underline">{c.total}{c.overdue ? <span className="ml-1 text-xs font-semibold text-bad">({c.overdue})</span> : null}</Link> : <span className="text-faint">·</span>}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
+
+function BureauDashboard({ actor, extras }: { actor: Actor; extras: Extras }) {
+  const m = extras.monitor;
+  if (!m) return null;
+  return (
+    <>
+      <Hero
+        actor={actor}
+        actions={
+          <>
+            <HeroLink primary href="/pendency" icon={<Timer />}>Pendency monitor</HeroLink>
+            <HeroLink href="/evc" icon={<CalendarClock />}>EVC queue ({m.evcAwaitingTotal})</HeroLink>
+            <HeroLink href="/alerts" icon={<BellRing />}>Alerts &amp; escalations</HeroLink>
+          </>
+        }
+      />
+      <MonitorTiles m={m} />
+      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2"><RegionMatrix m={m} /></div>
+        <Escalations m={m} />
+      </div>
+      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2"><UrgentCases m={m} /></div>
+        <Card>
+          <CardHeader title="EVC queue" description="Oldest first; schedule each visit before its schedule-by date." actions={<Link href="/evc" className="text-xs font-medium text-accent hover:underline">Open queue</Link>} />
+          {m.evcAwaiting.length === 0 ? <p className="px-4 py-6 text-center text-xs text-muted">Nothing awaiting scheduling.</p> : (
+            <ul className="divide-y divide-border">
+              {m.evcAwaiting.map((v) => (
+                <li key={v.id}>
+                  <Link href={`/applications/${v.application.id}?tab=workflow`} className="block px-4 py-2.5 text-xs hover:bg-subtle/60">
+                    <p className="truncate font-medium text-ink">{v.application.institutionName}</p>
+                    <p className={cn("text-muted", v.scheduleBy < new Date() && "font-medium text-bad")}>{applicationTypeLabel(v.application.applicationType)} · schedule by {formatDate(v.scheduleBy)}</p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+    </>
+  );
+}
+
+function CommitteeDashboard({ actor, extras }: { actor: Actor; extras: Extras }) {
+  if (extras.kind !== "COMMITTEE_MEMBER") return null;
+  const { now, visits, sacCases } = extras;
+  const reportsDue = visits.filter((v) => v.visitDate && v.visitDate <= now);
+  const upcoming = visits.filter((v) => v.visitDate && v.visitDate > now);
+  return (
+    <>
+      <Hero actor={actor} actions={<HeroLink primary href="/evc" icon={<CalendarCheck />}>My expert visits ({visits.length})</HeroLink>} />
+      <Tiles
+        tiles={[
+          { label: "Reports to submit", value: reportsDue.length, href: "/evc", icon: <FileWarning />, hint: "Visits held where you are the convenor and the report is not yet submitted" },
+          { label: "Upcoming visits", value: upcoming.length, href: "/evc", icon: <CalendarClock />, hint: "Scheduled visits where you are the convenor" },
+          { label: "At SAC/SHC", value: sacCases.length, href: "/pendency?stage=SAC_SHC", icon: <Gavel />, hint: "Applications awaiting the committee's consideration" },
+        ]}
+      />
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader title="My expert visits" description="Submit the report from the application's Workflow tab after the visit. Your recommendation supports — and does not replace — the competent authority's decision." />
+          {visits.length === 0 ? <EmptyState icon={<CalendarCheck />} title="No visits assigned to you" /> : (
+            <ul className="divide-y divide-border">
+              {visits.map((v) => (
+                <li key={v.id}>
+                  <Link href={`/applications/${v.application.id}?tab=workflow`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-subtle/60">
+                    <div className="min-w-0 flex-1 text-xs">
+                      <p className="truncate text-[13px] font-medium text-ink">{v.application.institutionName}</p>
+                      <p className="text-muted">{v.application.institution.city}, {v.application.institution.state} · visit {formatDate(v.visitDate)}</p>
+                    </div>
+                    {v.visitDate && v.visitDate <= now ? <span className="text-xs font-medium text-warn">Report due</span> : <span className="text-xs text-muted">in {daysBetween(now, v.visitDate!)} d</span>}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card>
+          <CardHeader title="Before SAC/SHC" description="Record the committee's outcome with the meeting date and minutes reference on the Workflow tab." />
+          {sacCases.length === 0 ? <EmptyState icon={<Gavel />} title="Nothing awaiting the committee" /> : (
+            <ul className="divide-y divide-border">
+              {sacCases.map((c) => (
+                <li key={c.id}>
+                  <Link href={`/applications/${c.application.id}?tab=workflow`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-subtle/60">
+                    <div className="min-w-0 flex-1 text-xs">
+                      <p className="truncate text-[13px] font-medium text-ink">{c.application.institutionName}</p>
+                      <p className="font-mono text-muted">{c.application.reference} · since {formatDate(c.enteredAt)}</p>
+                    </div>
+                    <DueBadge state={dueState(c.dueAt, now, 5)} daysLeft={daysBetween(now, c.dueAt)} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+    </>
+  );
 }
 
 function ApplicantDashboard({ actor, d, extras, institution }: { actor: Actor; d: Dash; extras: Extras; institution?: string | null }) {
@@ -187,7 +377,8 @@ function ApplicantDashboard({ actor, d, extras, institution }: { actor: Actor; d
   );
 }
 
-function OfficerDashboard({ actor, d }: { actor: Actor; d: Dash }) {
+function OfficerDashboard({ actor, d, extras }: { actor: Actor; d: Dash; extras: Extras }) {
+  const mon = extras.monitor;
   const m = d.metrics;
   return (
     <>
@@ -210,6 +401,12 @@ function OfficerDashboard({ actor, d }: { actor: Actor; d: Dash }) {
           { label: "Forwarded to authority", value: m.readyForReview, href: "/applications?status=READY_FOR_AUTHORIZED_REVIEW", icon: <Gavel />, hint: "Ready for authorised review" },
         ]}
       />
+      {mon && (
+        <div className="mt-4 grid gap-4 xl:grid-cols-3">
+          <div className="xl:col-span-2"><UrgentCases m={mon} /></div>
+          <Escalations m={mon} />
+        </div>
+      )}
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
           <AttentionList items={d.attention} actor={actor} title="Attention required" description="Highest-severity unresolved items across all applications." />
@@ -235,6 +432,12 @@ function SeniorDashboard({ actor, d, extras }: { actor: Actor; d: Dash; extras: 
           { label: "Total applications", value: d.metrics.total, href: "/applications", icon: <FolderOpen />, hint: "All applications" },
         ]}
       />
+      {extras.monitor && (
+        <div className="mt-4 grid gap-4 xl:grid-cols-3">
+          <div className="xl:col-span-2"><RegionMatrix m={extras.monitor} /></div>
+          <Escalations m={extras.monitor} />
+        </div>
+      )}
       <Card className="mt-4">
         <CardHeader title="Awaiting your decision" description="Each has passed automated checks with no open findings and verified documents. Your decision is recorded as a human review action." />
         {awaiting.length === 0 ? (
@@ -280,7 +483,8 @@ function AdminDashboard({ actor, d, extras }: { actor: Actor; d: Dash; extras: E
   const tasks = [
     { href: "/admin/users", icon: <Users />, title: "User Management", text: "Create accounts, assign roles, deactivate users." },
     { href: "/rules", icon: <ListChecks />, title: "Validation Rules", text: "Build rules and publish new versions." },
-    { href: "/admin/settings", icon: <Settings />, title: "System Settings", text: "Thresholds, timeouts, verification sources, alerts." },
+    { href: "/admin/workflow", icon: <Route />, title: "Workflow & Timelines", text: "Pathways, routing by application type, stage timelines and escalation." },
+    { href: "/admin/settings", icon: <Settings />, title: "System Settings", text: "Thresholds, timeouts, verification sources, alert timelines." },
     { href: "/audit", icon: <History />, title: "Reports & Audit", text: "Who did what, and exports." },
   ];
   return (

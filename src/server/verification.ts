@@ -222,9 +222,9 @@ export async function recordManualVerification(actor: Actor, documentId: string,
   const ref = reference.trim();
   if (r.length < 5) throw new DomainError("A reason of at least 5 characters is required.");
   if (ref.length < 3) throw new DomainError("A confirmation reference (e.g. letter number or email reference) is required.");
-  const doc = await prisma.document.findUnique({ where: { id: documentId }, include: { application: true, category: true, versions: { where: { isCurrent: true } } } });
+  const doc = await prisma.document.findUnique({ where: { id: documentId }, include: { application: { include: { institution: { select: { regionId: true } } } }, category: true, versions: { where: { isCurrent: true } } } });
   if (!doc) throw new NotFoundError();
-  assertInstitutionAccess(actor, doc.application.institutionId);
+  assertInstitutionAccess(actor, doc.application.institutionId, doc.application.institution.regionId);
   if (doc.application.status === "CLOSED") throw new DomainError("The application is closed.");
   const version = doc.versions[0];
   if (!version) throw new DomainError("Document has no current version.");

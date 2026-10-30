@@ -13,7 +13,7 @@ import { TopNav } from "@/components/shell/top-nav";
 import { BrandMark } from "@/components/brand";
 import { ROLE_THEME } from "@/lib/role-theme";
 import { cn } from "@/lib/utils";
-import { NAV } from "@/components/shell/nav";
+import { NAV, navAllowed } from "@/components/shell/nav";
 import { NotificationBell } from "@/components/shell/notifications";
 import { UserMenu } from "@/components/shell/user-menu";
 
@@ -21,7 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const actor = await requireActor();
   // Institutions use their own portal; send them to the matching page there.
   if (actor.role === "APPLICANT") redirect(portalPathFor((await headers()).get("x-pathname") ?? "/"));
-  const items = NAV.filter((i) => !i.permission || hasPermission(actor.role, i.permission)).map((i) =>
+  const items = NAV.filter((i) => navAllowed(i, (p) => hasPermission(actor.role, p))).map((i) =>
     i.href === "/" ? { ...i, label: actor.role === "APPLICANT" ? "My Dashboard" : actor.role === "ADMIN" ? "Admin Dashboard" : "Command Centre" } : i,
   );
   const [{ items: notifications, unread }, reviewCount, institution] = await Promise.all([

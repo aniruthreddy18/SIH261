@@ -24,6 +24,7 @@ const APP_TONE: Record<ApplicationStatus, Tone> = {
   REVIEW_REQUIRED: "warn",
   PROCESSING_FAILED: "bad",
   RECTIFICATION_REQUIRED: "warn",
+  IN_STAGE_REVIEW: "info",
   READY_FOR_AUTHORIZED_REVIEW: "accent",
   CLOSED: "outline",
 };

@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "Pravah AI — Application Validation & Compliance Intelligence", template: "%s · Pravah AI" },
-  description: "Decision-support prototype for validating institutional applications, documents and regulatory compliance (SIH 2026 PS 26261).",
+  description: "Decision-support prototype for AICTE approval workflow automation, compliance monitoring and alert management (SIH 2026 PS 26262).",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

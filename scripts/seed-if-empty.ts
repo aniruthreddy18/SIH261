@@ -10,6 +10,8 @@ async function main() {
   await db.$disconnect();
   if (users > 0) {
     console.log(`Database already holds ${users} user account(s); keeping existing data.`);
+    const { ensureWorkflowConfig } = await import("./ensure-workflow-config");
+    if (await ensureWorkflowConfig()) console.log("Added the approval-workflow configuration, Regions and demo staff accounts to the existing data.");
     return;
   }
   console.log("Empty database: seeding the demo dataset…");

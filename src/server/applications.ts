@@ -114,12 +114,16 @@ export async function createApplication(actor: Actor, input: CreateApplicationIn
 export async function getAccessibleApplication(actor: Actor, applicationId: string) {
   const app = await prisma.application.findUnique({ where: { id: applicationId }, include: { template: true, institution: { include: { programmes: true } }, programmes: true } });
   if (!app) throw new NotFoundError();
-  assertInstitutionAccess(actor, app.institutionId);
+  assertInstitutionAccess(actor, app.institutionId, app.institution.regionId);
   return app;
 }
 
+/** Prisma filter for the applications an actor may see (own institution, own Region, or all). */
 export function applicationScope(actor: Actor) {
-  if (hasPermission(actor.role, "application.viewAll")) return {};
+  if (hasPermission(actor.role, "application.viewAll")) {
+    if (actor.role === "SCRUTINY_OFFICER" && actor.regionId) return { institution: { regionId: actor.regionId } };
+    return {};
+  }
   return { institutionId: actor.institutionId ?? "__none__" };
 }
 

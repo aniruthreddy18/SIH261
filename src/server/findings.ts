@@ -79,9 +79,9 @@ export async function clearStaleFindings(tx: Tx, applicationId: string, source: 
 
 async function loadFindingForReview(actor: Actor, findingId: string) {
   assertPermission(actor, "finding.review");
-  const f = await prisma.finding.findUnique({ where: { id: findingId }, include: { application: true } });
+  const f = await prisma.finding.findUnique({ where: { id: findingId }, include: { application: { include: { institution: { select: { regionId: true } } } } } });
   if (!f) throw new NotFoundError();
-  assertInstitutionAccess(actor, f.application.institutionId);
+  assertInstitutionAccess(actor, f.application.institutionId, f.application.institution.regionId);
   if (f.application.status === "CLOSED") throw new DomainError("The application is closed.");
   return f;
 }
@@ -152,13 +152,13 @@ export async function getFindingDetail(actor: Actor, findingId: string) {
   const f = await prisma.finding.findUnique({
     where: { id: findingId },
     include: {
-      application: { select: { id: true, reference: true, institutionName: true, institutionId: true, status: true } },
+      application: { select: { id: true, reference: true, institutionName: true, institutionId: true, status: true, institution: { select: { regionId: true } } } },
       reviewActions: { orderBy: { createdAt: "desc" } },
       document: { include: { category: true, versions: { where: { isCurrent: true }, select: { id: true, versionNo: true, originalName: true } } } },
     },
   });
   if (!f) throw new NotFoundError();
-  assertInstitutionAccess(actor, f.application.institutionId);
+  assertInstitutionAccess(actor, f.application.institutionId, f.application.institution.regionId);
   const reviewActions = actor.role === "APPLICANT" ? f.reviewActions.filter((r) => r.action !== "NOTE") : f.reviewActions;
   const verification = f.verificationId ? await prisma.issuerVerification.findUnique({ where: { id: f.verificationId } }) : null;
   return { ...f, reviewActions, verification };

@@ -32,15 +32,34 @@
             └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Layer 5 — Approval workflow and monitoring (PS 26262)
+
+```
+ first validation run ──► assignPathway (application type → PathwayConfig, snapshot stored on the application)
+                          └► openStage(first stage): StageInstance{enteredAt, dueAt = SLA (new-institution SLA if set)}
+ authorised completion ──► advanceToNextStage: complete the visit, open the next stage not yet completed
+   (forward · EVC report · SAC/SHC outcome · clean preliminary checks via tryAutoRoute)
+ return to institution ──► markReturned → RectificationRequest → resubmission → reentryStage (re-scrutiny)
+ revert                ──► revertStage(target earlier stage), reason recorded
+ decision              ──► DECISION completed, CLOSED; undertaking + document validity items created
+ alert sweep (interval) ─► stages · EVC visits · undertakings · document validity · ageing findings
+                          → Alert{dedupeKey} reminders / overdue / escalation L2 (Bureau) / L3 (competent authority)
+                          → resolved automatically when the subject is done
+```
+
+Pure routing rules (`nextStage`, `reentryStage`, `revertTargets`, `dueState`, `ageBucket`) live in `src/lib/workflow/stages.ts`; the engine in `src/server/stage-engine.ts` only persists, audits and notifies. Pendency figures (`src/server/pendency.ts`) and reports (`src/server/monitoring-reports.ts`) are computed from stage visits at request time.
+
 ## Data model (Prisma)
 
-- **Identity:** `User` (role, optional institution), `Session` (hashed token).
+- **Identity:** `User` (role, optional institution, optional Region), `Session` (hashed token), `Region`.
 - **Records:** `Institution`, `InstitutionProgramme` (the "available institutional records").
 - **Configuration:** `DocumentCategory` (expected fields, verification required), `ApplicationTemplate`, `RequiredDocument` (checklist), `ValidationRule` + immutable `RuleVersion`, `ComplianceRequirement`, `IssuerSource`, `SyntheticIssuerRecord`, `SystemSetting`.
 - **Applications:** `Application`, `ApplicationProgramme`, `StatusChange`, `Counter` (server-generated references).
 - **Evidence:** `Document` (logical slot) → `DocumentVersion` (file, hash, processing state, page text JSON, metadata) → `ExtractedField` (machine value and correction kept side by side).
 - **Results:** `ValidationRun` (rule versions used, machine outcome, summary) → `RuleResult`; `Finding` (source RULE / ANOMALY / VERIFICATION, outcome class, status lifecycle); `IssuerVerification`.
 - **Workflow:** `ReviewAction`, `RectificationRequest`, `ComplianceNote`, `Notification`, `AuditEvent` (append-only; SQLite triggers block UPDATE/DELETE).
+- **Approval pathway:** `StageConfig` (timeline, reminder and escalation thresholds, responsible role), `PathwayConfig` (stage combination), `ApplicationTypeRoute` (type → pathway), `StageInstance` (one row per stage visit, never overwritten), `EvcVisit`.
+- **Monitoring:** `ComplianceItem` (undertaking or document validity) → `ComplianceSubmission` (file, hash, review); `Alert` (kind, level, recipients, dedupe key, resolved/acknowledged).
 
 ## Finding lifecycle
 
@@ -53,7 +72,7 @@ Fingerprint = `RULE|<rule>|<subject>`, `ANOMALY|<type>|<doc>`, or `VERIFY|<doc>`
 
 ## Application status
 
-`deriveApplicationStatus(openFindings, lastMachineOutcome)`: any open `PROCESSING_FAILED` finding gives `PROCESSING_FAILED`; else any open `FAIL` gives `AUTO_FAILED`; else any open finding gives `REVIEW_REQUIRED`; otherwise `AUTO_PASSED`, but only if the last machine outcome was a clean pass (exceptions resolved by humans never count as an automated pass). Human workflow states (`RECTIFICATION_REQUIRED`, `READY_FOR_AUTHORIZED_REVIEW`, `CLOSED`) are never overridden automatically. Forwarding requires no open findings, verification coverage of every verifiable document, and no evidence changed since the last run. All transitions are checked against `TRANSITIONS`.
+`deriveApplicationStatus(openFindings, lastMachineOutcome)`: any open `PROCESSING_FAILED` finding gives `PROCESSING_FAILED`; else any open `FAIL` gives `AUTO_FAILED`; else any open finding gives `REVIEW_REQUIRED`; otherwise `AUTO_PASSED`, but only if the last machine outcome was a clean pass (exceptions resolved by humans never count as an automated pass). Human workflow states (`RECTIFICATION_REQUIRED`, `IN_STAGE_REVIEW`, `READY_FOR_AUTHORIZED_REVIEW`, `CLOSED`) are never overridden automatically; validation cannot run while an application is with a committee. Forwarding requires no open findings, verification coverage of every verifiable document, and no evidence changed since the last run. All transitions are checked against `TRANSITIONS`.
 
 ## Request flow example — "Run validation"
 

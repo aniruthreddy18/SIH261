@@ -63,7 +63,7 @@ export default async function InstitutionLoginPage({ searchParams }: { searchPar
               </li>
             ))}
           </ul>
-          <p className="mt-5 border-t border-border pt-3 text-[11px] leading-relaxed text-muted">{DECISION_SUPPORT_DISCLAIMER} Prototype for SIH 2026 PS 26261; not an official AICTE system. Demo environment — all data is synthetic.</p>
+          <p className="mt-5 border-t border-border pt-3 text-[11px] leading-relaxed text-muted">{DECISION_SUPPORT_DISCLAIMER} Prototype for SIH 2026 PS 26262; not an official AICTE system. Demo environment — all data is synthetic.</p>
         </div>
       </section>
       <div className="glass order-1 w-full max-w-md rounded-xl p-5 sm:p-6 lg:order-2">

@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BadgeCheck, FolderOpen, Gauge, History, Inbox, ListChecks, ScanText, Settings, ShieldCheck, Users } from "lucide-react";
+import { BadgeCheck, BarChart3, BellRing, CalendarClock, Clock, FolderOpen, Gauge, History, Inbox, ListChecks, Route, ScanText, Settings, ShieldCheck, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "./nav";
 
-const ICONS: Record<string, typeof Gauge> = { gauge: Gauge, folder: FolderOpen, scan: ScanText, list: ListChecks, badge: BadgeCheck, inbox: Inbox, shield: ShieldCheck, history: History, users: Users, settings: Settings };
+const ICONS: Record<string, typeof Gauge> = { gauge: Gauge, folder: FolderOpen, scan: ScanText, list: ListChecks, badge: BadgeCheck, inbox: Inbox, shield: ShieldCheck, history: History, users: Users, settings: Settings, clock: Clock, calendar: CalendarClock, bell: BellRing, chart: BarChart3, route: Route };
 
 /** Horizontal section bar under the role header. Scrolls sideways on narrow screens. */
 export function TopNav({ items, reviewCount }: { items: NavItem[]; reviewCount: number }) {

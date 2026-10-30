@@ -30,6 +30,20 @@ export async function notifyRoles(roles: Role[], n: NotificationInput, tx: Tx = 
   return notifyUsers(users.map((u) => u.id), n, tx);
 }
 
+/** Active staff with these roles who cover the Region (Region-less staff cover every Region). */
+export async function staffForRegion(roles: Role[], regionId: string | null, tx: Tx = prisma): Promise<string[]> {
+  const users = await tx.user.findMany({
+    where: { role: { in: roles }, active: true, ...(regionId ? { OR: [{ regionId: null }, { regionId }] } : {}) },
+    select: { id: true },
+  });
+  return users.map((u) => u.id);
+}
+
+/** Notify staff in these roles who cover the application's Region. */
+export async function notifyStaff(roles: Role[], regionId: string | null, n: NotificationInput, tx: Tx = prisma) {
+  return notifyUsers(await staffForRegion(roles, regionId, tx), n, tx);
+}
+
 export async function notifyInstitution(institutionId: string, n: NotificationInput, tx: Tx = prisma) {
   const users = await tx.user.findMany({ where: { institutionId, role: "APPLICANT", active: true }, select: { id: true } });
   // Institution users work in the Institution Portal, so their links point there.

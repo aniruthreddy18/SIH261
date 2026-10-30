@@ -52,7 +52,8 @@ export async function forwardAction(applicationId: string, v: Values) {
 }
 
 export async function decisionAction(applicationId: string, v: Values) {
-  return runAction((a) => recordDecision(a, applicationId, v.outcome as DecisionOutcome, v.reason ?? "", v.reference ?? ""), { success: "Human review outcome recorded" });
+  const undertaking = v.undertakingTitle?.trim() ? { typeCode: v.undertakingType || "OTHER_CONDITION", title: v.undertakingTitle.trim(), dueDate: v.undertakingDue ?? "" } : null;
+  return runAction((a) => recordDecision(a, applicationId, v.outcome as DecisionOutcome, v.reason ?? "", v.reference ?? "", undertaking), { success: undertaking ? "Human review outcome recorded; the time-bound undertaking is now tracked" : "Human review outcome recorded", revalidate: ["/", "/applications", "/compliance-monitor", "/pendency"] });
 }
 
 export async function correctFieldAction(fieldId: string, v: Values) {

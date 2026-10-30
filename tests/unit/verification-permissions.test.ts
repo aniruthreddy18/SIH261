@@ -84,9 +84,28 @@ describe("permissions", () => {
   const applicant: Actor = { userId: "u1", name: "A", email: "a@x", role: "APPLICANT", institutionId: "inst-1" };
   const officer: Actor = { userId: "u2", name: "O", email: "o@x", role: "SCRUTINY_OFFICER", institutionId: null };
   it("isolates institutions for applicants", () => {
-    expect(canAccessInstitution(applicant, "inst-1")).toBe(true);
-    expect(canAccessInstitution(applicant, "inst-2")).toBe(false);
-    expect(canAccessInstitution(officer, "inst-2")).toBe(true);
+    expect(canAccessInstitution(applicant, "inst-1", "region-s")).toBe(true);
+    expect(canAccessInstitution(applicant, "inst-2", "region-s")).toBe(false);
+    expect(canAccessInstitution(officer, "inst-2", "region-s")).toBe(true);
+  });
+  it("limits a Regional officer to their Region; Bureau officers see every Region", () => {
+    const regional: Actor = { ...officer, regionId: "region-s" };
+    const bureau: Actor = { userId: "u3", name: "B", email: "b@x", role: "BUREAU_OFFICER", institutionId: null, regionId: null };
+    expect(canAccessInstitution(regional, "inst-1", "region-s")).toBe(true);
+    expect(canAccessInstitution(regional, "inst-2", "region-w")).toBe(false);
+    expect(canAccessInstitution(regional, "inst-3", null)).toBe(false);
+    expect(canAccessInstitution(bureau, "inst-2", "region-w")).toBe(true);
+  });
+  it("gives the new workflow roles only their own powers", () => {
+    expect(hasPermission("COMMITTEE_MEMBER", "evc.report")).toBe(true);
+    expect(hasPermission("COMMITTEE_MEMBER", "application.decide")).toBe(false);
+    expect(hasPermission("COMMITTEE_MEMBER", "evc.schedule")).toBe(false);
+    expect(hasPermission("BUREAU_OFFICER", "evc.schedule")).toBe(true);
+    expect(hasPermission("BUREAU_OFFICER", "application.decide")).toBe(false);
+    expect(hasPermission("APPLICANT", "compliance.submit")).toBe(true);
+    expect(hasPermission("APPLICANT", "compliance.verify")).toBe(false);
+    expect(hasPermission("ADMIN", "workflow.configure")).toBe(true);
+    expect(hasPermission("SCRUTINY_OFFICER", "workflow.configure")).toBe(false);
   });
   it("restricts privileged actions by role", () => {
     expect(hasPermission("APPLICANT", "rules.manage")).toBe(false);

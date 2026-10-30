@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FilePlus2, FolderOpen, HelpCircle, Home } from "lucide-react";
+import { ClipboardList, FilePlus2, FolderOpen, HelpCircle, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/portal", label: "Home", Icon: Home },
   { href: "/portal/applications", label: "My applications", Icon: FolderOpen },
   { href: "/portal/applications/new", label: "New application", Icon: FilePlus2 },
+  { href: "/portal/compliance", label: "Compliance", Icon: ClipboardList },
   { href: "/portal/help", label: "Help", Icon: HelpCircle },
 ];
 

@@ -9,6 +9,9 @@ export function portalPathFor(pathname: string): string {
   if (pathname.startsWith("/applications")) return "/portal/applications";
   const doc = /^\/documents\/([^/]+)/.exec(pathname);
   if (doc) return `/portal/documents/${doc[1]}`;
+  const item = /^\/compliance-monitor\/([^/]+)/.exec(pathname);
+  if (item) return `/portal/compliance/${item[1]}`;
+  if (pathname.startsWith("/compliance-monitor")) return "/portal/compliance";
   return "/portal";
 }
 

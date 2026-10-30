@@ -27,12 +27,14 @@ No environment variables are required: the image sets `DATABASE_URL=file:/data/p
 | `SESSION_TTL_HOURS`, `MAX_UPLOAD_MB` | Session lifetime and default upload limit (see `.env.example`). |
 | `INSTALL_AI_MODEL=false` | Skips the ~119 MB AI model download at build time (smaller image; the AI fallback is then shown as unavailable in System Settings). |
 | `OCR_ENABLED=false` | Disables OCR. |
+| `ALERT_SWEEP_INTERVAL_MINUTES` | Minutes between automatic alert and escalation sweeps (default 60; `0` turns the schedule off — administrators can still run a sweep from Alerts). |
 
 ## Things to know
 
 - **Who can sign in.** With `DEMO_MODE=true` the sign-in pages list the demo accounts and their shared password, so anyone with the link can sign in, including as the administrator. That is intended for a judged demo with synthetic data. Do not upload real documents. For anything beyond a demo, set `DEMO_MODE=false` and change the demo passwords (User Management).
 - **One instance only.** SQLite and the in-memory login rate limiter assume a single server. `railway.json` sets one replica; do not scale out.
 - **Redeploys keep data.** Migrations are re-applied safely and the seed is skipped when data exists (`Database already holds N user account(s); keeping existing data.`).
+- **Upgrading a volume seeded before the approval-workflow release.** On the first start after the upgrade, the existing data is kept and the Regions, sample pathways and timelines, and the new staff accounts (`bureau@`, `committee@`, `committee2@`, `ro.south@`) are added. The background monitoring cases and compliance items are only created by a fresh seed: wipe the volume (below) to get the full demo.
 - **Starting the demo over.** Wipe the volume's contents (volume settings) or remove and re-add the volume at `/data`, then redeploy: the next start seeds a fresh demo dataset.
 - **Resources.** OCR and the local AI model run on the CPU inside the request. Give the service about 1 GB of memory or more.
 - **Cost.** Railway bills by usage and plan; check its current pricing page.

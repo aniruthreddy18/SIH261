@@ -1,8 +1,29 @@
-# Five-minute demo script (SIH judges)
+# Demo script (SIH judges) — PS 26262
 
-Preparation: `npm run db:reset && npm run dev` and open http://localhost:3000. Password for all accounts: `Pravah@Demo2026`. Keep the `samples/` folder open. The compact demo has three applications: **Meridian** (expired certificate), **Northfield** (issuer mismatch) and **Greenfield** (draft).
+Preparation: `npm run db:reset && npm run dev` and open http://localhost:3000. Password for every account: `Pravah@Demo2026`. Keep the `samples/` folder open. The seed builds three story applications through the real document pipeline (**Meridian**, **Northfield**, **Greenfield**) and thirteen background cases spread over four demo Regions and every stage, with backdated timelines, then runs the alert sweep. Pathways and timelines are sample configuration, not APH values — say so once.
 
-**0:00 — Framing (20 s).** Sign in as `scrutiny@pravah.demo`. Point to the royal-blue *Scrutiny & Verification Desk* header (each role has its own colour), the *Demo environment* label and the disclaimer: decision support, not an approval engine. All data is synthetic, and issuer sources are simulated and labelled.
+## Part 1 — Approval workflow, monitoring and alerts (about 6 minutes)
+
+**0:00 — Framing (20 s).** Sign in as `bureau@pravah.demo` (teal *Approval Bureau · Monitoring* header). Point to the disclaimer: the system routes, tracks and reminds; every stage is completed and every outcome recorded by an authorised official.
+
+**0:20 — Bureau Command Centre (40 s).** KPI tiles (in process, overdue, awaiting EVC scheduling, open escalations, compliance overdue), the **Region × stage pendency** matrix with overdue counts in red, open escalations (highest level per case), *Approaching and overdue* cases and the EVC queue. Every number comes from stored stage visits.
+
+**1:00 — Pendency Monitor (50 s).** Open **Pendency**: filter by Region, stage, application type or state; ageing buckets per stage; workload by desk; bottlenecks (average days per stage and share completed within the timeline); Region-wise performance. *Brahmaputra College of Engineering* (new institution) is 17 days overdue at scrutiny and escalated to level 3. Download the **consolidated PDF**.
+
+**1:50 — Electronic case summary (50 s).** Open **Thar College of Engineering → Workflow**: pathway *EVC + SAC/SHC* (restoration / appeal), preliminary checks completed **automatically** by the workflow engine, the EVC report, and SAC/SHC due in two days. Point to **Return to institution** and **Revert to earlier stage** (reasons required, audited). Then **Admin → Workflow & Timelines** (as `admin@pravah.demo`, or just describe it): application type → pathway routing, stage timelines, new-institution timelines, reminder and escalation thresholds — all editable and audited.
+
+**2:40 — EVC scheduling (50 s).** Open **EVC**: *Konkan Institute of Technology* is 9 days late for scheduling (escalated). **Schedule visit** → today, convenor *Prof. Meera Pillai* → the convenor and the institution are notified in standard wording. Sign in as `committee@pravah.demo`: *My expert visits* shows *Godavari Institute of Engineering — Report due*. Open it → **Workflow** → **Submit report** (Satisfactory, observations, reference). The application moves to the competent authority by itself.
+
+**3:30 — Institution compliance (60 s).** Sign in on the **Institution login** as `applicant.greenfield@pravah.demo`. *Action required* lists **Document renewal due · Lease deed** (due in about 25 days). **Compliance** → the lease deed → upload any PDF from `samples/` as the renewed deed, a new *Valid until* date and a note → **Submit for verification**. Sign in as `bureau@pravah.demo` → **Compliance** → open the lease deed → open the file, **Verify** with remarks: the register moves to the new validity date and the reminders restart from it. Mention the *Deccan School of Planning* overdue undertaking and expired fire NOC (escalated to level 3).
+
+**4:30 — Alerts and escalation (40 s).** **Alerts**: open escalations (responsible desk → Bureau → competent authority), each with recipients and timestamps. As `senior@pravah.demo`, **Acknowledge** one with the action taken (audited). Administrators can run the sweep on demand; it is idempotent and closes alerts once the work is done.
+
+**5:10 — Region scoping and audit (40 s).** Sign in as `ro.south@pravah.demo`: only Southern Region institutions, pendency and alerts. Open **Audit Trail**: `PATHWAY_ASSIGNED`, `STAGE_ENTERED`, `STAGE_COMPLETED`, `EVC_SCHEDULED`, `EVC_REPORT_SUBMITTED`, `COMPLIANCE_EVIDENCE_VERIFIED`, `ESCALATION_ACKNOWLEDGED` — append-only, enforced by database triggers. **Reports**: pendency, overdue, EVC, undertakings, document validity, Region-wise and the alert log, each as CSV.
+
+## Part 2 — Scrutiny-stage document intelligence
+
+
+**0:00 — Framing (20 s).** Sign in as `scrutiny@pravah.demo`. Point to the royal-blue *Regional Office · Scrutiny Desk* header (each role has its own colour), the *Demo environment* label and the disclaimer: decision support, not an approval engine. All data is synthetic, and issuer sources are simulated and labelled.
 
 **0:20 — Command Centre (20 s).** Live tiles computed from the database and "Attention required" sorted by severity. (Each role has its own dashboard: green Institution Portal, royal-blue officer desk, saffron Competent Authority Desk, dark-blue Administration Console.) Click the **Meridian** expired-certificate item.
 

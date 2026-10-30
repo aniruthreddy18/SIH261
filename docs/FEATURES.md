@@ -1,11 +1,32 @@
 # Implemented features vs. future extensions
 
+## PS 26262 coverage
+
+| PS 26262 requirement | Status | Where |
+|---|---|---|
+| A. Routing through stage combinations (Only Scrutiny, Scrutiny + EVC, EVC + SAC/SHC, Only EVC) | ✅ | `src/lib/workflow/stages.ts`, `src/server/stage-engine.ts`; type → pathway routing in *Workflow & Timelines* |
+| A. Automatic movement to the next stage after preliminary processing | ✅ | Every completion advances the pathway; clean preliminary checks route without human action (integration tested) |
+| A. Authorised return / revert with reasons | ✅ | Return to institution from any stage (re-entry at re-scrutiny, completed stages not repeated); revert to an earlier stage |
+| A. Standardised communications | ✅ | Stage entry, EVC intimation, returns, undertakings and alerts use fixed wording, in-app (no e-mail/SMS) |
+| A. Electronic case summary | ✅ | Application **Workflow** tab: pathway tracker, stage history with timelines and outcomes, EVC report, compliance items |
+| B. Dashboards across Regions, stages, institutions, officers/committees | ✅ | Pendency Monitor; role dashboards for Regional officer, Bureau, committee member, competent authority, administrator |
+| B. Ageing, timelines, workload, bottlenecks, approaching/overdue | ✅ | Ageing buckets, workload by desk, bottleneck table, due-soon and overdue badges |
+| B. Audit trail | ✅ | Append-only (DB triggers); every stage movement, EVC action, compliance decision and acknowledgement |
+| C. EVC queue, scheduling, completion tracking, reminders, escalation | ✅ | EVC page; schedule-by dates; visit reminders; report-overdue alerts; shorter timelines for new institutions |
+| D. Undertakings: conditions, evidence, due dates, online submission, verification, reminders, escalation | ✅ | Compliance Monitor (officials) and portal Compliance (institutions) |
+| E. Lease / document validity: advance alerts, renewal submission and verification, overdue escalation | ✅ | Validity register; fire NOC and accreditation auto-registered from extracted dates when an outcome is recorded |
+| F. Configurable notifications and automatic escalation | ✅ | Timelines and thresholds configurable; ladder responsible desk → Bureau → competent authority; idempotent sweep |
+| F. Consolidated reports (pendency, EVC, undertakings, document validity, overdue, Region-wise) and audit of alerts | ✅ | Reports page, CSV per report, consolidated PDF, stored alert log with recipients and resolution |
+| Key requirement: configurable rules and timelines aligned with the APH | ⚠️ | Fully configurable; the shipped values are **samples**, not APH values |
+| Key requirement: secure storage, RBAC, human oversight | ✅ | Private hashed storage, server-side RBAC with Region scoping, every decision by an authorised official |
+| Regulatory safeguard | ✅ | No automated approval, rejection or regulatory decision anywhere in the code path |
+
 ## Implemented and verified
 
 | Area | Status | Notes |
 |---|---|---|
 | Authentication (scrypt, hashed session tokens, rate limiting) | ✅ | Integration and E2E tested |
-| Server-side RBAC for 4 roles (applicant, scrutiny & verification officer, senior official, administrator), institution isolation | ✅ | Pages, actions, routes, exports; unit, integration and E2E tests |
+| Server-side RBAC for 6 roles (applicant, Regional officer, Approval Bureau officer, committee member, competent authority, administrator), institution isolation, Region scoping | ✅ | Pages, actions, routes, exports; unit, integration and E2E tests |
 | Command Centre with DB-derived metrics | ✅ | No hard-coded numbers |
 | Separate Institution login and Institution Portal (home, applications, application page, document view, help) | ✅ | Server refuses accounts on the wrong sign-in page; E2E tested |
 | Application creation (server reference), templates, programmes | ✅ | Two configurable demo templates |
@@ -30,14 +51,16 @@
 | Compliance matrix (sample requirements) with notes | ✅ | Documentary evidence only |
 | Append-only audit trail with filters and CSV export | ✅ | DB triggers |
 | PDF / JSON validation report, applications CSV | ✅ | Applicant redaction |
-| In-app notifications, ageing alert sweep | ✅ | No e-mail claimed |
+| In-app notifications; scheduled alert and escalation sweep | ✅ | No e-mail or SMS claimed |
 | Admin: users, settings, issuer sources | ✅ | |
 | Responsive layout (desktop, tablet, phone) | ✅ | Horizontal top navbar that scrolls sideways on small screens |
 
 ## Future extensions
 
 - Integration with an authorised AICTE / issuing-authority verification API (the adapter is ready; access is required).
-- Background job queue (BullMQ or similar) for large OCR workloads and scheduled alert sweeps.
+- Background job queue (BullMQ or similar) for large OCR workloads, and the alert sweep as a separate scheduled job.
+- APH-aligned pathways and timelines, once the applicable handbook values are confirmed by the Regulation Bureau; per-Region holidays and working-day timelines.
+- E-mail / SMS delivery of the standardised communications, and calendar invitations for EVC visits.
 - Table and multi-value field extraction (several programmes per letter); multilingual OCR (Hindi and regional languages).
 - Cryptographic validation of PDF digital signatures (PAdES) and DSC certificates.
 - Optional LLM-assisted summarisation and document-type classification, behind the safeguards in `ARCHITECTURE.md`; a multilingual extraction model (Hindi and regional languages).

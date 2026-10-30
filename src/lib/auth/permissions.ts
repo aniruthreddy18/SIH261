@@ -24,6 +24,20 @@ export const PERMISSIONS = [
   "users.manage",
   "settings.manage",
   "issuers.manage",
+  // Approval workflow and monitoring (PS 26262)
+  "workflow.monitor",
+  "workflow.revert",
+  "workflow.configure",
+  "evc.schedule",
+  "evc.report",
+  "committee.record",
+  "compliance.manage",
+  "compliance.verify",
+  "compliance.submit",
+  "alerts.view",
+  "alerts.acknowledge",
+  "alerts.run",
+  "reports.view",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -34,6 +48,7 @@ const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "document.reprocess",
     "validation.run",
     "application.submitRectification",
+    "compliance.submit",
   ],
   SCRUTINY_OFFICER: [
     "application.create",
@@ -50,6 +65,35 @@ const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "compliance.note",
     "audit.view",
     "audit.export",
+    "workflow.monitor",
+    "evc.schedule",
+    "compliance.verify",
+    "alerts.view",
+    "alerts.acknowledge",
+    "reports.view",
+  ],
+  BUREAU_OFFICER: [
+    "application.viewAll",
+    "finding.review",
+    "application.requestRectification",
+    "compliance.note",
+    "audit.view",
+    "audit.export",
+    "workflow.monitor",
+    "workflow.revert",
+    "evc.schedule",
+    "compliance.manage",
+    "compliance.verify",
+    "alerts.view",
+    "alerts.acknowledge",
+    "alerts.run",
+    "reports.view",
+  ],
+  COMMITTEE_MEMBER: [
+    "application.viewAll",
+    "evc.report",
+    "committee.record",
+    "alerts.view",
   ],
   SENIOR_OFFICIAL: [
     "application.viewAll",
@@ -59,6 +103,12 @@ const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "compliance.note",
     "audit.view",
     "audit.export",
+    "workflow.monitor",
+    "workflow.revert",
+    "compliance.manage",
+    "alerts.view",
+    "alerts.acknowledge",
+    "reports.view",
   ],
   ADMIN: [
     "application.viewAll",
@@ -68,6 +118,11 @@ const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "users.manage",
     "settings.manage",
     "issuers.manage",
+    "workflow.monitor",
+    "workflow.configure",
+    "alerts.view",
+    "alerts.run",
+    "reports.view",
   ],
 };
 
@@ -77,6 +132,8 @@ export interface Actor {
   email: string;
   role: Role;
   institutionId: string | null;
+  /** Regional officers are limited to one Region; null/undefined means all Regions. */
+  regionId?: string | null;
 }
 
 /** A system actor is used by background services (seed, validation engine). */
@@ -91,8 +148,12 @@ export function permissionsFor(role: Role): readonly Permission[] {
 }
 
 /** Whether the actor may see an application belonging to `institutionId`. */
-export function canAccessInstitution(actor: Actor, institutionId: string): boolean {
-  if (hasPermission(actor.role, "application.viewAll")) return true;
+export function canAccessInstitution(actor: Actor, institutionId: string, institutionRegionId: string | null): boolean {
+  if (hasPermission(actor.role, "application.viewAll")) {
+    // A Regional officer sees only the institutions of their Region.
+    if (actor.role === "SCRUTINY_OFFICER" && actor.regionId) return institutionRegionId === actor.regionId;
+    return true;
+  }
   return actor.role === "APPLICANT" && actor.institutionId !== null && actor.institutionId === institutionId;
 }
 
@@ -117,8 +178,8 @@ export function assertPermission(actor: Actor, permission: Permission): void {
   if (!hasPermission(actor.role, permission)) throw new AuthorizationError();
 }
 
-export function assertInstitutionAccess(actor: Actor, institutionId: string): void {
-  if (!canAccessInstitution(actor, institutionId)) {
+export function assertInstitutionAccess(actor: Actor, institutionId: string, institutionRegionId: string | null): void {
+  if (!canAccessInstitution(actor, institutionId, institutionRegionId)) {
     // Do not reveal whether the record exists.
     throw new NotFoundError();
   }

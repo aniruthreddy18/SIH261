@@ -10,7 +10,7 @@ import type { ActionResult } from "@/server/actions-util";
 export interface DialogField {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "select";
+  type?: "text" | "textarea" | "select" | "date" | "number";
   options?: { value: string; label: string }[];
   placeholder?: string;
   hint?: string;
@@ -74,7 +74,7 @@ export function ActionDialog({
                   {f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </Select>
               ) : (
-                <Input id={`f-${f.name}`} name={f.name} required={f.required !== false} minLength={f.minLength} placeholder={f.placeholder} defaultValue={f.defaultValue} />
+                <Input id={`f-${f.name}`} name={f.name} type={f.type === "date" || f.type === "number" ? f.type : "text"} required={f.required !== false} minLength={f.type === "date" || f.type === "number" ? undefined : f.minLength} placeholder={f.placeholder} defaultValue={f.defaultValue} />
               )}
             </Field>
           ))}

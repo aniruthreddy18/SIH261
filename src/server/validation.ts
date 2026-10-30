@@ -15,7 +15,8 @@ import { prisma, json } from "./db";
 import { recordAudit, SYSTEM } from "./audit";
 import { getAccessibleApplication, transitionStatus } from "./applications";
 import { clearStaleFindings, upsertFinding } from "./findings";
-import { notifyInstitution, notifyRoles } from "./notifications";
+import { notifyInstitution, notifyStaff } from "./notifications";
+import { afterValidation } from "./stage-engine";
 import { getActiveRuleSpecs } from "./rules";
 import { getSettings } from "./settings";
 
@@ -115,12 +116,12 @@ export interface RunResult {
   clearedFindings: number;
 }
 
-export async function runValidation(actor: Actor, applicationId: string, trigger: "MANUAL" | "RECTIFICATION" | "SEED" = "MANUAL"): Promise<RunResult> {
+export async function runValidation(actor: Actor, applicationId: string, trigger: "MANUAL" | "RECTIFICATION" | "SEED" = "MANUAL", opts: { at?: Date } = {}): Promise<RunResult> {
   assertPermission(actor, "validation.run");
   const app = await getAccessibleApplication(actor, applicationId);
   const status = app.status as ApplicationStatus;
   if (status === "PROCESSING") throw new DomainError("A validation run is already in progress for this application.");
-  if (status === "CLOSED" || status === "READY_FOR_AUTHORIZED_REVIEW") throw new DomainError("Validation cannot be rerun once the application is with the authorised reviewer or closed.");
+  if (status === "CLOSED" || status === "READY_FOR_AUTHORIZED_REVIEW" || status === "IN_STAGE_REVIEW") throw new DomainError("Validation cannot be rerun while the application is with a committee or the competent authority, or once it is closed.");
   if (actor.role === "APPLICANT") {
     if (!APPLICANT_EDITABLE_STATUSES.includes(status)) throw new DomainError("You cannot run validation in the current status.");
     if (status === "RECTIFICATION_REQUIRED" && trigger !== "RECTIFICATION") throw new DomainError("Submit your rectification to trigger revalidation.");
@@ -252,7 +253,7 @@ export async function runValidation(actor: Actor, applicationId: string, trigger
         const high = open.filter((f) => f.severity === "HIGH" || f.severity === "CRITICAL").length;
         await notifyInstitution(app.institutionId, { type: "NEW_FINDINGS", title: `Validation found ${newFindings} new issue(s)`, body: `${app.reference}: status is now ${next.replace(/_/g, " ").toLowerCase()}.`, link: `/applications/${applicationId}?tab=findings`, severity: high ? "HIGH" : "MEDIUM" }, tx);
         if (trigger !== "SEED") {
-          await notifyRoles(["SCRUTINY_OFFICER"], { type: "NEW_FINDINGS", title: `${newFindings} new finding(s) on ${app.reference}`, body: `${app.institutionName} — ${next.replace(/_/g, " ").toLowerCase()}`, link: `/applications/${applicationId}?tab=findings`, severity: high ? "HIGH" : "MEDIUM" }, tx);
+          await notifyStaff(["SCRUTINY_OFFICER"], app.institution.regionId, { type: "NEW_FINDINGS", title: `${newFindings} new finding(s) on ${app.reference}`, body: `${app.institutionName} — ${next.replace(/_/g, " ").toLowerCase()}`, link: `/applications/${applicationId}?tab=findings`, severity: high ? "HIGH" : "MEDIUM" }, tx);
         }
       }
       const expired = outcomes.filter((o) => o.status === "FAIL" && checkTypeByCode.get(o.ruleCode) === "DATE_VALID_ON");
@@ -262,7 +263,16 @@ export async function runValidation(actor: Actor, applicationId: string, trigger
       return { newFindings, cleared: cleared + clearedAnomalies, next };
     }, { timeout: 60_000 });
 
-    return { runId: run.id, runNumber: run.runNumber, machineOutcome: outcome, status: result.next, summary, newFindings: result.newFindings, clearedFindings: result.cleared };
+    // Workflow: route a new submission into its pathway, reopen scrutiny after a rectification,
+    // or move a clean application out of preliminary checks automatically.
+    // A routing problem must not turn a completed validation run into a failed one.
+    try {
+      await afterValidation(applicationId, opts.at);
+    } catch (err) {
+      console.error("[workflow] routing after validation failed", (err as Error)?.message);
+    }
+    const final = await prisma.application.findUniqueOrThrow({ where: { id: applicationId }, select: { status: true } });
+    return { runId: run.id, runNumber: run.runNumber, machineOutcome: outcome, status: final.status as ApplicationStatus, summary, newFindings: result.newFindings, clearedFindings: result.cleared };
   } catch (err) {
     const message = err instanceof DomainError ? err.message : "The validation run failed due to a technical error.";
     console.error("[validation] run failed", (err as Error)?.message);

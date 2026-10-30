@@ -9,6 +9,7 @@ export const APPLICANT_GUIDANCE: Record<ApplicationStatus, { title: string; text
   REVIEW_REQUIRED: { title: "Under review by AICTE", text: "Some items need a decision by an official. You will be notified if anything is needed from you.", tone: "warn", action: null, step: 4 },
   AUTO_PASSED: { title: "Automatic checks passed", text: "Your documents passed the automatic checks. Officials now verify them and review the application. This is not an approval.", tone: "ok", action: null, step: 4 },
   RECTIFICATION_REQUIRED: { title: "Correction requested by AICTE", text: "Fix the deficiencies listed below before the due date, then submit your corrections. The checks run again automatically.", tone: "warn", action: "Submit your corrections", step: 3 },
+  IN_STAGE_REVIEW: { title: "With the AICTE committee", text: "Scrutiny is complete. Your application is with the Expert Visit Committee or the standing committee, as its processing pathway requires. You will be told the visit date in advance.", tone: "info", action: null, step: 4 },
   READY_FOR_AUTHORIZED_REVIEW: { title: "With the competent authority", text: "Your application has been forwarded for the authorised review. No action is needed from you.", tone: "info", action: null, step: 5 },
   CLOSED: { title: "Review outcome recorded", text: "A review outcome has been recorded by the competent authority. See the outcome on the application page.", tone: "ok", action: null, step: 5 },
 };

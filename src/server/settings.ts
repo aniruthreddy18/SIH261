@@ -11,6 +11,17 @@ export const SETTING_DEFS = {
   syntheticIssuerOutage: { label: "Simulate synthetic issuer outage", type: "boolean", default: () => false, help: "Makes the synthetic demo issuer return SOURCE_UNAVAILABLE, to demonstrate outage handling." },
   highSeverityAlertDays: { label: "High-severity ageing alert (days)", type: "number", min: 0, max: 60, default: () => 3, help: "Unresolved HIGH/CRITICAL findings older than this generate an alert." },
   rectificationDueDays: { label: "Default rectification window (days)", type: "number", min: 1, max: 90, default: () => 14, help: "Due date offset for rectification requests." },
+  // Monitoring timelines (PS 26262). Sample values — configure per the applicable APH.
+  evcScheduleWithinDays: { label: "EVC: schedule within (days)", type: "number", min: 1, max: 60, default: () => 7, help: "An application entering the EVC stage must have its visit scheduled within this many days." },
+  evcVisitReminderDays: { label: "EVC: visit reminder (days before)", type: "number", min: 0, max: 30, default: () => 3, help: "Committee convenor and institution are reminded this many days before the visit." },
+  evcReportWithinDays: { label: "EVC: report due after visit (days)", type: "number", min: 1, max: 30, default: () => 5, help: "The committee report is overdue this many days after the visit date." },
+  undertakingReminderDays: { label: "Undertakings: first reminder (days before due)", type: "number", min: 1, max: 180, default: () => 30, help: "Institutions are reminded of an undertaking this many days before it falls due." },
+  undertakingFinalReminderDays: { label: "Undertakings: final reminder (days before due)", type: "number", min: 0, max: 60, default: () => 7, help: "Second reminder, also sent to the Regional officer." },
+  documentExpiryFirstAlertDays: { label: "Documents: first expiry alert (days before)", type: "number", min: 1, max: 365, default: () => 60, help: "Advance alert to the institution to renew a lease deed or other prescribed document." },
+  documentExpirySecondAlertDays: { label: "Documents: second expiry alert (days before)", type: "number", min: 0, max: 120, default: () => 15, help: "Second alert, also sent to the Regional officer." },
+  complianceVerifyWithinDays: { label: "Compliance: verify submissions within (days)", type: "number", min: 1, max: 60, default: () => 7, help: "Officials are reminded when submitted evidence has waited this long for verification." },
+  complianceEscalateL2Days: { label: "Compliance: escalate to Bureau after (days overdue)", type: "number", min: 0, max: 180, default: () => 7, help: "Unfulfilled undertakings and expired documents escalate to the Approval Bureau." },
+  complianceEscalateL3Days: { label: "Compliance: escalate to competent authority after (days overdue)", type: "number", min: 1, max: 365, default: () => 30, help: "Second escalation level for long-overdue compliance." },
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFS;

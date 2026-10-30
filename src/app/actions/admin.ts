@@ -9,10 +9,10 @@ export async function saveRuleAction(input: RuleVersionInput) {
 export async function setRuleActiveAction(ruleId: string, active: boolean, v: Record<string, string>) {
   return runAction((a) => setRuleActive(a, ruleId, active, v.reason ?? ""), { success: active ? "Rule activated" : "Rule deactivated", revalidate: ["/rules"] });
 }
-export async function createUserAction(input: { email: string; name: string; designation?: string; role: string; institutionId?: string; password: string }) {
+export async function createUserAction(input: { email: string; name: string; designation?: string; role: string; institutionId?: string; regionId?: string; password: string }) {
   return runAction((a) => createUser(a, input as Parameters<typeof createUser>[1]), { success: "User created", revalidate: ["/admin/users"] });
 }
-export async function updateUserAction(userId: string, patch: { role?: string; active?: boolean }) {
+export async function updateUserAction(userId: string, patch: { role?: string; active?: boolean; regionId?: string | null }) {
   return runAction((a) => updateUser(a, userId, patch), { success: "User updated", revalidate: ["/admin/users"] });
 }
 export async function updateSettingsAction(values: Record<string, string>) {
@@ -22,5 +22,5 @@ export async function setIssuerSourceAction(sourceId: string, enabled: boolean) 
   return runAction((a) => setIssuerSourceEnabled(a, sourceId, enabled), { success: enabled ? "Source enabled" : "Source disabled", revalidate: ["/verification", "/admin/settings"] });
 }
 export async function sweepAlertsAction() {
-  return runAction((a) => sweepAlerts(a), { success: (r) => `Alert sweep complete: ${r.aged} ageing finding(s), ${r.sent} new notification(s)`, revalidate: ["/admin/settings"] });
+  return runAction((a) => sweepAlerts(a), { success: (r) => `Alert sweep complete: ${r.raised} new alert(s) — ${r.reminders} reminder(s), ${r.overdue} overdue, ${r.escalations} escalation(s); ${r.resolved} resolved`, revalidate: ["/admin/settings", "/alerts"] });
 }

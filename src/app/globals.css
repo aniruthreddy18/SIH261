@@ -32,6 +32,8 @@
   --color-green-soft: #e8f6ee;
   --color-green-bright: #4cc26a;
   --color-teal: #0b7a74;
+  --color-teal-dark: #075a55;
+  --color-teal-soft: #e2f5f3;
   --color-teal-bright: #18c2ba;
   --color-sky: #e1effe;
 
@@ -172,6 +174,13 @@ html[data-role="SCRUTINY_OFFICER"] {
   --color-accent-hover: var(--color-navy-dark);
   --color-accent-soft: var(--color-navy-soft);
   --color-accent-line: #bfd5f2;
+}
+/* Approval Bureau: teal, between the officers' blue and the institutions' green. */
+html[data-role="BUREAU_OFFICER"] {
+  --color-accent: var(--color-teal);
+  --color-accent-hover: var(--color-teal-dark);
+  --color-accent-soft: var(--color-teal-soft);
+  --color-accent-line: #a9ddd7;
 }
 html[data-role="SENIOR_OFFICIAL"] {
   --color-accent: var(--color-saffron);

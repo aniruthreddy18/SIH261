@@ -68,6 +68,6 @@ export async function logout(token: string | undefined) {
   await recordAudit({ actor: toActor(session.user), eventType: "AUTH_LOGOUT", action: "Signed out" });
 }
 
-export function toActor(u: { id: string; name: string; email: string; role: Role | string; institutionId: string | null }): Actor {
-  return { userId: u.id, name: u.name, email: u.email, role: u.role as Role, institutionId: u.institutionId };
+export function toActor(u: { id: string; name: string; email: string; role: Role | string; institutionId: string | null; regionId?: string | null }): Actor {
+  return { userId: u.id, name: u.name, email: u.email, role: u.role as Role, institutionId: u.institutionId, regionId: u.regionId ?? null };
 }

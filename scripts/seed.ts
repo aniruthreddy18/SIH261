@@ -23,6 +23,7 @@ import type { Actor } from "../src/lib/auth/permissions";
 import { ACTIVE_FINDING_STATUSES } from "../src/lib/domain";
 import { ACADEMIC_YEAR, APPLICATIONS, DEMO_PASSWORD, INSTITUTIONS, ISSUER_RECORDS, STAFF } from "./lib/demo-data";
 import { renderDoc } from "./lib/render";
+import { MONITORING_STAFF, regionForState, seedAlerts, seedBackgroundCases, seedComplianceItems, seedWorkflowConfig } from "./lib/monitoring-seed";
 import { shutdownOcr } from "../src/lib/extraction/ocr";
 
 const CATEGORIES = [
@@ -158,17 +159,24 @@ async function main() {
     await prisma.syntheticIssuerRecord.create({ data: { referenceNumber: r.referenceNumber, categoryCode: r.categoryCode, issuerName: r.issuerName, institutionName: r.institutionName, institutionCode: r.institutionCode, issueDate: r.issueDate, expiryDate: r.expiryDate, behaviour: r.behaviour, note: (r as { note?: string }).note ?? null } });
   }
 
+  console.log("Seeding Regions and the sample workflow configuration…");
+  const regionIds = await seedWorkflowConfig();
+
   console.log("Seeding institutions and users…");
   const instIds = new Map<string, string>();
   for (const i of institutions) {
-    const created = await prisma.institution.create({ data: { code: i.code, name: i.name, category: i.category, state: i.state, city: i.city, establishedYear: i.established, programmes: { create: i.programmes } } });
+    const created = await prisma.institution.create({ data: { code: i.code, name: i.name, category: i.category, state: i.state, city: i.city, establishedYear: i.established, regionId: regionForState(i.state, regionIds), programmes: { create: i.programmes } } });
     instIds.set(i.slug, created.id);
   }
   const actors = new Map<string, Actor>();
-  for (const s of STAFF) {
-    const u = await prisma.user.create({ data: { email: s.email, name: s.name, role: s.role, designation: s.designation, passwordHash: await hashPassword(DEMO_PASSWORD) } });
-    actors.set(s.role, toActor(u));
+  const staff = new Map<string, Actor>();
+  for (const s of [...STAFF, ...MONITORING_STAFF]) {
+    const region = (s as { region?: string }).region;
+    const regionId = region ? regionIds.get(region) ?? null : null;
+    const u = await prisma.user.create({ data: { email: s.email, name: s.name, role: s.role, designation: s.designation, regionId, passwordHash: await hashPassword(DEMO_PASSWORD) } });
+    staff.set(s.email, toActor(u));
   }
+  actors.set("SCRUTINY_OFFICER", staff.get("scrutiny@pravah.demo")!);
   for (const i of institutions) {
     const u = await prisma.user.create({ data: { email: `applicant.${i.slug}@pravah.demo`, name: i.contact, role: "APPLICANT", designation: `Authorised contact, ${i.name}`, institutionId: instIds.get(i.slug)!, passwordHash: await hashPassword(DEMO_PASSWORD) } });
     actors.set(`applicant:${i.slug}`, toActor(u));
@@ -215,6 +223,14 @@ async function main() {
     const open = await prisma.finding.count({ where: { applicationId: app.id, status: { in: ACTIVE_FINDING_STATUSES } } });
     console.log(`${final.reference}  ${final.status}  (${open} open finding${open === 1 ? "" : "s"})`);
   }
+
+  const now = new Date();
+  console.log("\nSeeding background cases across Regions and stages (no documents; timelines are sample configuration)…");
+  const backgroundIds = await seedBackgroundCases({ now, regionIds, staff });
+  const allInstitutionIds = new Map<string, string>([...institutions.map((i) => [i.code, instIds.get(i.slug)!] as [string, string]), ...backgroundIds]);
+  await seedComplianceItems({ now, institutionIds: allInstitutionIds, staff });
+  const sweep = await seedAlerts(now);
+  console.log(`Alert sweep: ${sweep.raised} alert(s) — ${sweep.reminders} reminder(s), ${sweep.overdue} overdue, ${sweep.escalations} escalation(s)`);
 
   console.log(`\nDone. Sign in at http://localhost:3000 with any demo account; password: ${DEMO_PASSWORD}`);
 }

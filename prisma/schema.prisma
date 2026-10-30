@@ -18,6 +18,8 @@ datasource db {
 enum Role {
   APPLICANT
   SCRUTINY_OFFICER
+  BUREAU_OFFICER
+  COMMITTEE_MEMBER
   SENIOR_OFFICIAL
   ADMIN
 }
@@ -30,6 +32,7 @@ enum ApplicationStatus {
   REVIEW_REQUIRED
   PROCESSING_FAILED
   RECTIFICATION_REQUIRED
+  IN_STAGE_REVIEW
   READY_FOR_AUTHORIZED_REVIEW
   CLOSED
 }
@@ -120,6 +123,9 @@ model User {
   role          Role
   institutionId String?
   institution   Institution?   @relation(fields: [institutionId], references: [id])
+  /// Regional officers work on one Region; null means all Regions.
+  regionId      String?
+  region        Region?        @relation(fields: [regionId], references: [id])
   active        Boolean        @default(true)
   lastLoginAt   DateTime?
   createdAt     DateTime       @default(now())
@@ -155,10 +161,26 @@ model Institution {
   state           String
   city            String
   establishedYear Int?
+  regionId        String?
+  region          Region?                @relation(fields: [regionId], references: [id])
   createdAt       DateTime               @default(now())
   programmes      InstitutionProgramme[]
   applications    Application[]
   users           User[]
+  complianceItems ComplianceItem[]
+
+  @@index([regionId])
+}
+
+/// An AICTE Region (demo names). Applications are routed to the Region of their institution.
+model Region {
+  id           String        @id @default(cuid())
+  code         String        @unique
+  name         String
+  office       String
+  sortOrder    Int           @default(0)
+  institutions Institution[]
+  users        User[]
 }
 
 model InstitutionProgramme {
@@ -229,6 +251,13 @@ model Application {
   institutionCode     String?
   institutionCategory String
   academicYear        String
+  /// Application type (e.g. NEW_INSTITUTION); selects the processing pathway.
+  applicationType     String                 @default("EXTENSION_OF_APPROVAL")
+  /// Pathway assigned on submission (snapshot of its stage list in pathwayStagesJson).
+  pathwayCode         String?
+  pathwayStagesJson   String?
+  /// Current processing stage code (null before submission, CLOSED after the decision).
+  currentStage        String?
   status              ApplicationStatus      @default(DRAFT)
   contactName         String
   contactEmail        String
@@ -246,9 +275,13 @@ model Application {
   rectifications      RectificationRequest[]
   statusChanges       StatusChange[]
   complianceNotes     ComplianceNote[]
+  stages              StageInstance[]
+  evcVisits           EvcVisit[]
+  complianceItems     ComplianceItem[]
 
   @@index([status])
   @@index([institutionId])
+  @@index([currentStage])
 }
 
 model ApplicationProgramme {
@@ -493,17 +526,17 @@ model IssuerSource {
 }
 
 model SyntheticIssuerRecord {
-  id              String @id @default(cuid())
-  referenceNumber String @unique
+  id              String  @id @default(cuid())
+  referenceNumber String  @unique
   categoryCode    String
   issuerName      String
   institutionName String
   institutionCode String
   issueDate       String?
   expiryDate      String?
-  recordStatus    String @default("ACTIVE")
-  behaviour       String @default("NORMAL")
-  extraJson       String @default("{}")
+  recordStatus    String  @default("ACTIVE")
+  behaviour       String  @default("NORMAL")
+  extraJson       String  @default("{}")
   note            String?
 }
 
@@ -662,4 +695,224 @@ model SystemSetting {
   value       String
   updatedAt   DateTime @updatedAt
   updatedById String?
+}
+
+// ---------------------------------------------------------------------------
+// Approval workflow (PS 26262): configurable stages, pathways and routing
+// ---------------------------------------------------------------------------
+
+/// A processing stage and its timeline. Values are sample configuration editable by the
+/// administrator; they are not taken from the Approval Process Handbook.
+model StageConfig {
+  code                  String   @id
+  name                  String
+  description           String
+  /// Role that must act at this stage (receives reminders and level-1 escalations).
+  responsibleRole       Role
+  slaDays               Int
+  /// Shorter timeline for applications from new institutions (null = same as slaDays).
+  newInstitutionSlaDays Int?
+  reminderDaysBefore    Int      @default(3)
+  /// Days overdue before escalating to the Bureau (level 2) and the competent authority (level 3).
+  escalateL2AfterDays   Int      @default(3)
+  escalateL3AfterDays   Int      @default(10)
+  sortOrder             Int      @default(0)
+  updatedAt             DateTime @updatedAt
+}
+
+/// An ordered combination of stages, e.g. Scrutiny + EVC.
+model PathwayConfig {
+  code        String @id
+  name        String
+  description String
+  stagesJson  String
+  sortOrder   Int    @default(0)
+}
+
+/// Which pathway an application type follows (sample mapping; configure per the applicable APH).
+model ApplicationTypeRoute {
+  applicationType  String   @id
+  name             String
+  pathwayCode      String
+  isNewInstitution Boolean  @default(false)
+  sortOrder        Int      @default(0)
+  updatedAt        DateTime @updatedAt
+}
+
+enum StageStatus {
+  ACTIVE
+  COMPLETED
+  RETURNED
+}
+
+/// One visit of an application to a stage. A stage can be visited again (re-scrutiny, or a
+/// return from a later stage), so history is kept as separate rows.
+model StageInstance {
+  id              String      @id @default(cuid())
+  applicationId   String
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageCode       String
+  attempt         Int         @default(1)
+  status          StageStatus @default(ACTIVE)
+  enteredAt       DateTime    @default(now())
+  dueAt           DateTime
+  completedAt     DateTime?
+  completedById   String?
+  completedByName String?
+  outcome         String?
+  remarks         String?
+  reference       String?
+  /// Highest escalation level already raised for this visit (0 = none).
+  escalationLevel Int         @default(0)
+  evcVisits       EvcVisit[]
+
+  @@index([applicationId, enteredAt])
+  @@index([status, dueAt])
+  @@index([stageCode, status])
+}
+
+enum EvcStatus {
+  AWAITING_SCHEDULE
+  SCHEDULED
+  REPORT_SUBMITTED
+  CANCELLED
+}
+
+/// Expert Visit Committee visit for an application in the EVC stage.
+model EvcVisit {
+  id                String        @id @default(cuid())
+  applicationId     String
+  application       Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageInstanceId   String
+  stageInstance     StageInstance @relation(fields: [stageInstanceId], references: [id], onDelete: Cascade)
+  status            EvcStatus     @default(AWAITING_SCHEDULE)
+  /// The visit must be scheduled by this date.
+  scheduleBy        DateTime
+  visitDate         DateTime?
+  committeeJson     String        @default("[]")
+  convenorId        String?
+  convenorName      String?
+  scheduledById     String?
+  scheduledByName   String?
+  scheduledAt       DateTime?
+  rescheduleCount   Int           @default(0)
+  reportSubmittedAt DateTime?
+  recommendation    String?
+  reportSummary     String?
+  reportReference   String?
+  createdAt         DateTime      @default(now())
+
+  @@index([status, scheduleBy])
+  @@index([convenorId])
+  @@index([applicationId])
+}
+
+// ---------------------------------------------------------------------------
+// Institutional compliance: time-bound undertakings and prescribed document validity
+// ---------------------------------------------------------------------------
+
+enum ComplianceKind {
+  UNDERTAKING
+  DOCUMENT_VALIDITY
+}
+
+enum ComplianceStatus {
+  OPEN
+  SUBMITTED
+  FULFILLED
+  WAIVED
+}
+
+model ComplianceItem {
+  id              String                 @id @default(cuid())
+  institutionId   String
+  institution     Institution            @relation(fields: [institutionId], references: [id])
+  applicationId   String?
+  application     Application?           @relation(fields: [applicationId], references: [id])
+  kind            ComplianceKind
+  /// Undertaking or document type code, e.g. LEASE_DEED, FIRE_NOC, FACULTY_RECRUITMENT.
+  typeCode        String
+  title           String
+  description     String
+  /// Certificate / deed number for documents; condition reference for undertakings.
+  reference       String?
+  /// Undertaking due date, or the document's current "valid until" date.
+  dueDate         DateTime
+  status          ComplianceStatus       @default(OPEN)
+  createdById     String?
+  createdByName   String
+  createdAt       DateTime               @default(now())
+  closedAt        DateTime?
+  closedNote      String?
+  escalationLevel Int                    @default(0)
+  submissions     ComplianceSubmission[]
+
+  @@index([institutionId])
+  @@index([kind, status, dueDate])
+}
+
+enum SubmissionReview {
+  PENDING
+  ACCEPTED
+  RETURNED
+}
+
+/// Evidence for an undertaking or a renewed document, uploaded by the institution and
+/// verified (or returned) by an authorised official.
+model ComplianceSubmission {
+  id              String           @id @default(cuid())
+  itemId          String
+  item            ComplianceItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  fileName        String
+  mimeType        String
+  sizeBytes       Int
+  sha256          String
+  storageKey      String
+  note            String
+  newValidUntil   DateTime?
+  newReference    String?
+  submittedById   String
+  submittedByName String
+  submittedAt     DateTime         @default(now())
+  review          SubmissionReview @default(PENDING)
+  reviewerId      String?
+  reviewerName    String?
+  reviewRemarks   String?
+  reviewedAt      DateTime?
+
+  @@index([itemId, submittedAt])
+  @@index([review])
+}
+
+// ---------------------------------------------------------------------------
+// Alerts and escalations
+// ---------------------------------------------------------------------------
+
+/// Every reminder, overdue alert and escalation the alert engine raises. `dedupeKey` makes the
+/// sweep idempotent: the same alert is never raised twice.
+model Alert {
+  id              String    @id @default(cuid())
+  kind            String
+  subjectType     String
+  subjectId       String
+  applicationId   String?
+  institutionId   String?
+  regionId        String?
+  level           Int       @default(0)
+  title           String
+  body            String
+  link            String?
+  severity        Severity
+  dedupeKey       String    @unique
+  recipients      Int       @default(0)
+  recipientRoles  String    @default("")
+  createdAt       DateTime  @default(now())
+  resolvedAt      DateTime?
+  acknowledgedAt  DateTime?
+  acknowledgedBy  String?
+  acknowledgeNote String?
+
+  @@index([kind, createdAt])
+  @@index([subjectType, subjectId])
+  @@index([resolvedAt])
 }

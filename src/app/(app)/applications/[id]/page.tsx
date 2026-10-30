@@ -4,6 +4,11 @@ import { Check, Download, Forward, Gavel, Play, RadioTower } from "lucide-react"
 import { hasPermission, NotFoundError } from "@/lib/auth/permissions";
 import { APPLICATION_STATUS_DESCRIPTIONS, DECISION_SUPPORT_DISCLAIMER, VERIFICATION_STATUS_LABELS, type ApplicationStatus } from "@/lib/domain";
 import { DECISION_OUTCOMES } from "@/lib/findings";
+import { applicationTypeLabel, stageLabel, UNDERTAKING_TYPES } from "@/lib/workflow/stages";
+import { forwardTarget } from "@/server/workflow";
+import { getStageHistory } from "@/server/pendency";
+import { stagesOf } from "@/server/stage-engine";
+import { StageTracker, trackerSteps } from "@/components/workflow/stage-ui";
 import { getApplicationDetail } from "@/server/applications";
 import { verificationCoverage } from "@/server/verification";
 import { getSettings } from "@/server/settings";
@@ -24,6 +29,7 @@ import { ComplianceTab } from "./compliance-tab";
 import { RectificationTab } from "./rectification-tab";
 import { ReviewTab } from "./review-tab";
 import { HistoryTab } from "./history-tab";
+import { WorkflowTab } from "./workflow-tab";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -44,7 +50,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
     if (e instanceof NotFoundError) notFound();
     throw e;
   }
-  const [coverage, settings, categories] = await Promise.all([verificationCoverage(id), getSettings(), prisma.documentCategory.findMany({ orderBy: { sortOrder: "asc" } })]);
+  const [coverage, settings, categories, stageHistory] = await Promise.all([verificationCoverage(id), getSettings(), prisma.documentCategory.findMany({ orderBy: { sortOrder: "asc" } }), getStageHistory(id)]);
   const { app, checklist, documents, runs, findings } = detail;
   const status = app.status as ApplicationStatus;
   const openFindings = findings.filter((f) => ACTIVE.includes(f.status));
@@ -56,9 +62,12 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
   const verified = coverage.filter((c) => c.covered).length;
   const isApplicant = actor.role === "APPLICANT";
 
-  const canValidate = hasPermission(actor.role, "validation.run") && !["PROCESSING", "READY_FOR_AUTHORIZED_REVIEW", "CLOSED"].includes(status) && !(isApplicant && status === "RECTIFICATION_REQUIRED");
+  const canValidate = hasPermission(actor.role, "validation.run") && !["PROCESSING", "READY_FOR_AUTHORIZED_REVIEW", "IN_STAGE_REVIEW", "CLOSED"].includes(status) && !(isApplicant && status === "RECTIFICATION_REQUIRED");
   const canVerify = hasPermission(actor.role, "verification.run") && !["PROCESSING", "CLOSED"].includes(status);
-  const canForward = hasPermission(actor.role, "application.forward") && ["AUTO_PASSED", "REVIEW_REQUIRED"].includes(status);
+  const canForward = hasPermission(actor.role, "application.forward") && ["AUTO_PASSED", "REVIEW_REQUIRED"].includes(status) && (!app.currentStage || ["SCRUTINY", "PRELIMINARY"].includes(app.currentStage));
+  const target = forwardTarget(app);
+  // Pathways that go straight to the competent authority keep the familiar label.
+  const forwardLabel = !target || target === "DECISION" ? "Forward for authorised review" : `Forward to ${stageLabel(target)}`;
   // The same conditions the server enforces in forwardForAuthorizedReview, shown up front with the fix for each.
   const unverified = coverage.filter((c) => !c.covered);
   const forwardBlockers: { text: string; href: string; action: string }[] = [
@@ -89,6 +98,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
     { key: "compliance", label: "Compliance" },
     { key: "rectification", label: "Rectification", count: detail.rectifications.length || undefined, warn: status === "RECTIFICATION_REQUIRED" },
     { key: "review", label: "Review & decisions" },
+    { key: "workflow", label: "Workflow" },
     { key: "history", label: "History" },
   ];
 
@@ -101,7 +111,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
           <>
             <span className="font-mono text-xs text-ink-2">{app.reference}</span>
             <span className="text-faint">·</span>
-            <span className="text-xs text-muted">{app.template.name} · AY {app.academicYear}</span>
+            <span className="text-xs text-muted" title={`Checklist: ${app.template.name}`}>{applicationTypeLabel(app.applicationType)} · AY {app.academicYear}</span>
             <span data-testid="app-status"><ApplicationStatusBadge status={status} /></span>
           </>
         }
@@ -111,11 +121,11 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
             {canVerify && <ActionButton label="Run issuer verification" pendingLabel="Verifying…" icon={<RadioTower />} variant="outline" action={runVerificationAction.bind(null, app.id, undefined)} />}
             {canForward && (
               <ActionDialog
-                label="Forward for authorised review"
+                label={forwardLabel}
                 icon={<Forward />}
                 disabled={forwardBlockers.length > 0}
-                title="Forward for authorised review"
-                description="Requires: no open findings, issuer verification complete for every verifiable document, and no evidence changed since the last validation run. The server re-checks all of these."
+                title={forwardLabel}
+                description={`Completes the scrutiny stage and moves the application to ${target ? stageLabel(target) : "the competent authority"} on its pathway. Requires: no open findings, issuer verification complete for every verifiable document, and no evidence changed since the last validation run. The server re-checks all of these.`}
                 fields={[{ name: "reason", label: "Scrutiny note / reason", type: "textarea", minLength: 10 }]}
                 action={forwardAction.bind(null, app.id)}
               />
@@ -132,6 +142,9 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
                   { name: "outcome", label: "Outcome", type: "select", options: Object.entries(DECISION_OUTCOMES).map(([value, label]) => ({ value, label })) },
                   { name: "reason", label: "Reasons", type: "textarea", minLength: 10 },
                   { name: "reference", label: "Decision reference (file / minute no.)", minLength: 3 },
+                  { name: "undertakingType", label: "Time-bound undertaking (optional) — type", type: "select", required: false, options: Object.entries(UNDERTAKING_TYPES).map(([value, label]) => ({ value, label })) },
+                  { name: "undertakingTitle", label: "Undertaking / condition (leave blank if none)", required: false },
+                  { name: "undertakingDue", label: "Undertaking due date", type: "date", required: false },
                 ]}
                 submitLabel="Record outcome"
                 action={decisionAction.bind(null, app.id)}
@@ -141,6 +154,12 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
           </>
         }
       />
+
+      {app.currentStage && (
+        <div className="glass-card mb-3 rounded-2xl border px-4 py-3" aria-label="Processing pathway">
+          <StageTracker steps={trackerSteps(stagesOf(app), stageHistory.instances, app.currentStage, new Date())} />
+        </div>
+      )}
 
       <ol className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-label="Workflow progress">
         {steps.map((s, i) => (
@@ -172,7 +191,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
           </Notice>
         )}
         {canForward && forwardBlockers.length === 0 && (
-          <Notice tone="ok" title="Ready to forward">No open findings, issuer verification complete for all {coverage.length} verifiable document(s), and validation is up to date. Use “Forward for authorised review”.</Notice>
+          <Notice tone="ok" title="Ready to forward">No open findings, issuer verification complete for all {coverage.length} verifiable document(s), and validation is up to date. Use “{forwardLabel}”.</Notice>
         )}
         {changedSinceRun && status !== "CLOSED" && <Notice tone="warn" title="Evidence changed since the last validation run">Run #{lastRun!.runNumber} did not evaluate the latest document versions. {canValidate ? "Run validation to update the results." : isApplicant && status === "RECTIFICATION_REQUIRED" ? "Submit your rectification on the Rectification tab to trigger revalidation." : ""}</Notice>}
       </div>
@@ -200,6 +219,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
       {tab === "compliance" && <ComplianceTab applicationId={app.id} actor={actor} />}
       {tab === "rectification" && <RectificationTab detail={detail} actor={actor} categories={categories.map((c) => ({ code: c.code, name: c.name }))} maxMb={settings.maxUploadMb} />}
       {tab === "review" && <ReviewTab detail={detail} />}
+      {tab === "workflow" && <WorkflowTab app={app} actor={actor} />}
       {tab === "history" && <HistoryTab detail={detail} actor={actor} />}
     </>
   );

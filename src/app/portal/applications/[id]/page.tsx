@@ -20,6 +20,9 @@ import { ActionButton } from "@/components/action-dialog";
 import { ApplicationStatusBadge, RuleStatusBadge, SourceTypeBadge, VerificationStatusBadge } from "@/components/status";
 import { FindingCard } from "@/components/app/finding-card";
 import { StepTracker } from "@/components/portal/application-card";
+import { StageTracker, trackerSteps } from "@/components/workflow/stage-ui";
+import { stagesOf } from "@/server/stage-engine";
+import { getStageHistory } from "@/server/pendency";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { PortalDocuments } from "./portal-documents";
 import { PortalRectification } from "./portal-rectification";
@@ -44,7 +47,8 @@ export default async function PortalApplicationPage({ params, searchParams }: { 
     if (e instanceof NotFoundError) notFound();
     throw e;
   }
-  const [coverage, settings, categories] = await Promise.all([verificationCoverage(id), getSettings(), prisma.documentCategory.findMany({ orderBy: { sortOrder: "asc" } })]);
+  const [coverage, settings, categories, stageHistory] = await Promise.all([verificationCoverage(id), getSettings(), prisma.documentCategory.findMany({ orderBy: { sortOrder: "asc" } }), getStageHistory(id)]);
+  const visit = stageHistory.visits.find((v) => v.status === "SCHEDULED");
   const cats = categories.map((c) => ({ code: c.code, name: c.name }));
   const { app, runs, findings, documents, statusChanges, reviewActions, rectifications } = detail;
   const status = app.status as ApplicationStatus;
@@ -80,6 +84,13 @@ export default async function PortalApplicationPage({ params, searchParams }: { 
       <Card className="mb-4">
         <CardBody className="space-y-4">
           <StepTracker status={status} />
+          {app.currentStage && (
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-muted">Processing stages for this application</p>
+              <StageTracker steps={trackerSteps(stagesOf(app), stageHistory.instances, app.currentStage, new Date())} compact />
+            </div>
+          )}
+          {visit && <Notice tone="info" title="Expert Visit Committee">A visit to your institution is scheduled for <strong>{formatDate(visit.visitDate)}</strong>. Keep the premises, records and original documents available for verification.</Notice>}
           <Notice tone={g.tone} title={g.title}>{g.text}</Notice>
           {missing.length > 0 && status !== "CLOSED" && <p className="text-xs text-bad">Missing mandatory documents: {missing.map((m) => m.label).join(", ")}. <Link href="?view=documents" className="underline">Upload them</Link>.</p>}
           {changedSinceRun && status !== "CLOSED" && (
