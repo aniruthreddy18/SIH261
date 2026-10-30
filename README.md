@@ -147,7 +147,7 @@ Password for every account: **`Pravah@Demo2026`** (stored as scrypt hashes; each
 
 Separation of duties: the institution submits; the Regional officer scrutinises and forwards; the Bureau schedules visits, monitors and verifies compliance; the committee reports and recommends; the competent authority decides; the administrator configures. Nothing in the workflow takes a regulatory decision on its own.
 
-Institution accounts in the compact demo: `applicant.meridian@pravah.demo`, `applicant.northfield@pravah.demo` and `applicant.greenfield@pravah.demo`. Each can only see its own institution's records.
+The compact demo has **10 accounts**: the 7 staff accounts above and 3 institution accounts — `applicant.meridian@pravah.demo`, `applicant.northfield@pravah.demo` and `applicant.greenfield@pravah.demo`. Each can only see its own institution's records.
 
 ### Institution Portal
 
@@ -175,9 +175,17 @@ The seed builds every application **through the real pipeline** (rendered synthe
 | PRV-2027-000002 | Northfield School of Architecture | Issuer mismatch | Review required | The simulated registry's validity (09/01/2028) differs from the certificate (09/01/2031). Review the finding, then record a **manual confirmation** on Issuer verification before forwarding |
 | PRV-2027-000003 | Greenfield College of Engineering | Draft | Draft | The institution uploads `greenfield-faculty-statement.pdf` and `greenfield-built-up-area.pdf`, runs the checks (all pass), then officer → issuer verification → forward → senior official → closed |
 
-**Background cases for monitoring.** Thirteen further synthetic applications across the four demo Regions are driven through the real stage engine with backdated times, so the monitoring screens have content: cases at scrutiny (on track, overdue, escalated to level 3), in the EVC queue (one overdue for scheduling), with a visit scheduled or held and the report due, at SAC/SHC, at the competent authority, returned to the institution, and closed. They carry no uploaded documents (the story applications cover document validation). Compliance items cover a lease deed due for renewal (Greenfield — renew it from the portal), undertaking evidence awaiting verification (Northfield), an overdue undertaking and an expired fire NOC escalated to level 3 (Deccan School of Planning), and more. The seed finishes with an alert sweep. Dates are relative to the day you seed.
+**Workflow cases.** The same three institutions also have applications that show the rest of the workflow, driven through the real stage engine with backdated times (they carry no uploaded documents):
 
-`DEMO_DATASET=full npm run db:reset` seeds six more scenarios: a clean application, a missing document, a cross-document mismatch, a scanned (OCR) NOC with pending/unavailable sources, duplicate and suspicious-metadata indicators, and an application ready for authorised review. The automated tests always use the full dataset.
+| Ref | Institution | Type → pathway | State |
+|---|---|---|---|
+| PRV-2027-000004 | Northfield | Increase in intake → Scrutiny + EVC | Expert visit held three days ago; the convenor's report is due |
+| PRV-2027-000005 | Greenfield | Change of site → Only EVC | Preliminary checks routed automatically; visit not scheduled, 9 days late, escalated to level 3 |
+| PRV-2026-000001 | Meridian | Extension of approval (last year) | Closed; its undertaking (faculty appointments) is 10 days overdue and escalated |
+
+Meridian's current application has been at scrutiny for 20 days (overdue, escalated to level 2). Compliance items: Greenfield's lease deed is due for renewal (renew it from the portal), Northfield's undertaking evidence awaits verification, and Meridian's occupancy certificate expires soon. The seed finishes with an alert sweep; dates are relative to the day you seed.
+
+`DEMO_DATASET=full npm run db:reset` (used by the automated tests) seeds a larger dataset instead: thirteen background institutions spread across the four Regions and every stage, plus six more document scenarios — a clean application, a missing document, a cross-document mismatch, a scanned (OCR) NOC with pending/unavailable sources, duplicate and suspicious-metadata indicators, and an application ready for authorised review. The automated tests always use the full dataset.
 
 Files for live uploads are in [`samples/`](samples/): `meridian-fire-noc-renewed.pdf`, `greenfield-*.pdf`, `ai-demo-noc-prose.pdf` (AI extraction demo), `scanned-noc-sample.png` (OCR), and `invalid-renamed-file.pdf` (a text file renamed to `.pdf`, which is rejected).
 

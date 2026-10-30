@@ -63,19 +63,37 @@ type Step =
   | { kind: "return"; message: string }
   | { kind: "close"; at: number; outcome: string };
 
-interface Background {
-  code: string;
-  name: string;
-  category: string;
-  state: string;
-  city: string;
+interface CaseSpec {
   type: keyof typeof APPLICATION_TYPE_LABELS;
   submittedDaysAgo: number;
   programme: string;
   /** Status after preliminary processing (before the engine opens the first stage). */
   status: ApplicationStatus;
   steps: Step[];
+  academicYear?: string;
 }
+
+interface Background extends CaseSpec {
+  code: string;
+  name: string;
+  category: string;
+  state: string;
+  city: string;
+}
+
+/**
+ * Compact demo: further applications for the three story institutions, so one small dataset
+ * still shows every part of the workflow (EVC report due, an unscheduled visit escalated after
+ * automatic preliminary routing, and last year's closed case whose undertaking is overdue).
+ */
+const STORY_CASES: (CaseSpec & { institutionCode: string })[] = [
+  { institutionCode: "PRV-INST-1055", type: "INCREASE_IN_INTAKE", submittedDaysAgo: 30, programme: "Bachelor of Architecture", status: "REVIEW_REQUIRED",
+    steps: [{ kind: "advance", at: -19, outcome: "FORWARDED", remarks: "Scrutiny complete; no open findings. Forwarded to the Expert Visit Committee." }, { kind: "evc", at: -19, scheduledAt: -16, visitIn: -3 }] },
+  { institutionCode: "PRV-INST-1081", type: "CHANGE_OF_SITE", submittedDaysAgo: 18, programme: "B.Tech Artificial Intelligence and Data Science", status: "AUTO_PASSED",
+    steps: [{ kind: "advance", at: -16, outcome: "AUTO_ROUTED", remarks: "Automated preliminary checks passed with no open findings and issuer verification complete; routed automatically to the next stage of the pathway." }] },
+  { institutionCode: "PRV-INST-1027", type: "EXTENSION_OF_APPROVAL", academicYear: "2026-27", submittedDaysAgo: 150, programme: "Master of Business Administration", status: "REVIEW_REQUIRED",
+    steps: [{ kind: "advance", at: -138, outcome: "FORWARDED", remarks: "Scrutiny complete; forwarded for authorised review." }, { kind: "close", at: -128, outcome: "SATISFACTORY_FOR_FURTHER_PROCESSING" }] },
+];
 
 // Day offsets are relative to the seed time (negative = in the past).
 const BACKGROUND: Background[] = [
@@ -106,62 +124,91 @@ const BACKGROUND: Background[] = [
 
 const day = (now: Date, offset: number) => addDays(now, offset);
 
-/** Background cases driven through the real stage engine with backdated times. */
-export async function seedBackgroundCases(opts: { now: Date; regionIds: Map<string, string>; staff: Map<string, Actor> }) {
-  const { now, regionIds, staff } = opts;
+type Ctx = { now: Date; staff: Map<string, Actor> };
+
+/** Create one application for an institution and drive it through the stage engine with backdated times. */
+async function runCase(c: CaseSpec, inst: { id: string; code: string; name: string; category: string }, applicant: Actor, ctx: Ctx) {
+  const { now, staff } = ctx;
   const scrutiny = staff.get("scrutiny@pravah.demo")!;
   const bureau = staff.get("bureau@pravah.demo")!;
   const convenor = staff.get("committee@pravah.demo")!;
   const member = staff.get("committee2@pravah.demo")!;
   const senior = staff.get("senior@pravah.demo")!;
-  const institutionIds = new Map<string, string>();
+  const tag = inst.code.slice(-4);
+  const submitted = day(now, -c.submittedDaysAgo);
+  const app = await createApplication(applicant, {
+    institutionId: inst.id, templateCode: "EOA", institutionName: inst.name, institutionCode: inst.code, institutionCategory: inst.category, academicYear: c.academicYear ?? ACADEMIC_YEAR,
+    contactName: applicant.name, contactEmail: applicant.email, programmes: [{ name: c.programme, level: c.programme.startsWith("Master") ? "PG" : c.programme.startsWith("Diploma") ? "Diploma" : "UG", intake: 60 }],
+  }, { createdAt: submitted });
+  await prisma.application.update({ where: { id: app.id }, data: { applicationType: c.type, submittedAt: submitted, status: c.status } });
+  await prisma.statusChange.create({ data: { applicationId: app.id, fromStatus: "DRAFT", toStatus: c.status, actorLabel: "seed:monitoring-case", reason: "Synthetic case for workflow monitoring (no documents attached).", createdAt: submitted } });
 
-  for (const b of BACKGROUND) {
-    const inst = await prisma.institution.create({ data: { code: b.code, name: b.name, category: b.category, state: b.state, city: b.city, establishedYear: b.type === "NEW_INSTITUTION" ? 2026 : 2012, regionId: regionForState(b.state, regionIds), programmes: { create: [{ name: b.programme, level: b.category.includes("Diploma") ? "Diploma" : b.programme.startsWith("Master") ? "PG" : "UG", approvedIntake: b.type === "NEW_INSTITUTION" ? 0 : 60, lastApprovedYear: b.type === "NEW_INSTITUTION" ? "N/A (new)" : "2026-27" }] } } });
-    institutionIds.set(b.code, inst.id);
-    const slug = b.code.slice(-4);
-    const user = await prisma.user.create({ data: { email: `applicant.${slug}@pravah.demo`, name: `Principal, ${b.name}`, role: "APPLICANT", designation: `Authorised contact, ${b.name}`, institutionId: inst.id, passwordHash: await hashPassword(DEMO_PASSWORD) } });
-    const applicant = toActor(user);
-    const submitted = day(now, -b.submittedDaysAgo);
-    const app = await createApplication(applicant, {
-      institutionId: inst.id, templateCode: "EOA", institutionName: b.name, institutionCode: b.code, institutionCategory: b.category, academicYear: ACADEMIC_YEAR,
-      contactName: user.name, contactEmail: user.email, programmes: [{ name: b.programme, level: b.programme.startsWith("Master") ? "PG" : b.programme.startsWith("Diploma") ? "Diploma" : "UG", intake: 60 }],
-    }, { createdAt: submitted });
-    await prisma.application.update({ where: { id: app.id }, data: { applicationType: b.type, submittedAt: submitted, status: b.status } });
-    await prisma.statusChange.create({ data: { applicationId: app.id, fromStatus: "DRAFT", toStatus: b.status, actorLabel: "seed:background-case", reason: "Synthetic background case for workflow monitoring (no documents attached).", createdAt: submitted } });
+  await prisma.$transaction(async (tx) => {
+    const stages = await assignPathway(tx, app.id, { actor: null, at: submitted });
+    await openStage(tx, app.id, stages[0], { actor: null, at: submitted }, { note: "on submission", notify: false });
+  }, { timeout: 30_000 });
 
-    await prisma.$transaction(async (tx) => {
-      const stages = await assignPathway(tx, app.id, { actor: null, at: submitted });
-      await openStage(tx, app.id, stages[0], { actor: null, at: submitted }, { note: "on submission", notify: false });
-    }, { timeout: 30_000 });
-
-    for (const s of b.steps) {
-      if (s.kind === "advance") {
-        const cur = await prisma.application.findUniqueOrThrow({ where: { id: app.id } });
-        const by = cur.currentStage === "SCRUTINY" ? scrutiny : cur.currentStage === "PRELIMINARY" ? null : cur.currentStage === "EVC" ? bureau : senior;
-        const remarks = s.remarks;
-        await prisma.$transaction((tx) => advanceToNextStage(tx, app.id, { actor: by, at: day(now, s.at) }, { outcome: s.outcome, remarks, reference: s.reference ?? null }), { timeout: 30_000 });
-        if (by) await prisma.reviewAction.create({ data: { applicationId: app.id, actorId: by.userId, actorName: by.name, actorRole: by.role, action: "FORWARD", outcome: s.outcome, reason: remarks, createdAt: day(now, s.at) } });
-      } else if (s.kind === "evc") {
-        const visit = await prisma.evcVisit.findFirstOrThrow({ where: { applicationId: app.id, status: "AWAITING_SCHEDULE" } });
-        if (s.scheduledAt === undefined) continue;
-        await prisma.evcVisit.update({ where: { id: visit.id }, data: { status: "SCHEDULED", visitDate: day(now, s.visitIn ?? 7), convenorId: convenor.userId, convenorName: convenor.name, committeeJson: JSON.stringify([convenor.name, member.name]), scheduledById: bureau.userId, scheduledByName: bureau.name, scheduledAt: day(now, s.scheduledAt) } });
-        if (s.reportAt !== undefined) {
-          await prisma.evcVisit.update({ where: { id: visit.id }, data: { status: "REPORT_SUBMITTED", recommendation: s.recommendation ?? "SATISFACTORY", reportSummary: "Infrastructure, laboratories and faculty records were seen and found broadly in line with the application. Minor observations noted for the institution (synthetic report).", reportReference: `EVC/${b.code.slice(-4)}/2026`, reportSubmittedAt: day(now, s.reportAt) } });
-          await prisma.$transaction((tx) => advanceToNextStage(tx, app.id, { actor: convenor, at: day(now, s.reportAt!) }, { outcome: "EVC_SATISFACTORY", remarks: "EVC report submitted: satisfactory.", reference: `EVC/${b.code.slice(-4)}/2026` }), { timeout: 30_000 });
-        }
-      } else if (s.kind === "return") {
-        await returnForDeficiencies(scrutiny, app.id, s.message);
-      } else if (s.kind === "close") {
-        await prisma.$transaction(async (tx) => {
-          await advanceToNextStage(tx, app.id, { actor: senior, at: day(now, s.at) }, { outcome: "DECIDED", remarks: "Outcome recorded by the competent authority.", reference: `DEMO/DEC/${b.code.slice(-4)}` });
-          await transitionStatus(tx, app.id, "CLOSED", { actor: senior, reason: "Outcome recorded (synthetic background case)." });
-          await tx.reviewAction.create({ data: { applicationId: app.id, actorId: senior.userId, actorName: senior.name, actorRole: senior.role, action: "DECISION", outcome: s.outcome, reason: "Scrutiny complete with no open findings; outcome recorded for the demo record.", reference: `DEMO/DEC/${b.code.slice(-4)}`, createdAt: day(now, s.at) } });
-        }, { timeout: 30_000 });
+  for (const s of c.steps) {
+    if (s.kind === "advance") {
+      const cur = await prisma.application.findUniqueOrThrow({ where: { id: app.id } });
+      const by = cur.currentStage === "SCRUTINY" ? scrutiny : cur.currentStage === "PRELIMINARY" ? null : cur.currentStage === "EVC" ? bureau : senior;
+      await prisma.$transaction((tx) => advanceToNextStage(tx, app.id, { actor: by, at: day(now, s.at) }, { outcome: s.outcome, remarks: s.remarks, reference: s.reference ?? null }), { timeout: 30_000 });
+      if (by) await prisma.reviewAction.create({ data: { applicationId: app.id, actorId: by.userId, actorName: by.name, actorRole: by.role, action: "FORWARD", outcome: s.outcome, reason: s.remarks, createdAt: day(now, s.at) } });
+    } else if (s.kind === "evc") {
+      const visit = await prisma.evcVisit.findFirstOrThrow({ where: { applicationId: app.id, status: "AWAITING_SCHEDULE" } });
+      if (s.scheduledAt === undefined) continue;
+      await prisma.evcVisit.update({ where: { id: visit.id }, data: { status: "SCHEDULED", visitDate: day(now, s.visitIn ?? 7), convenorId: convenor.userId, convenorName: convenor.name, committeeJson: JSON.stringify([convenor.name, member.name]), scheduledById: bureau.userId, scheduledByName: bureau.name, scheduledAt: day(now, s.scheduledAt) } });
+      if (s.reportAt !== undefined) {
+        await prisma.evcVisit.update({ where: { id: visit.id }, data: { status: "REPORT_SUBMITTED", recommendation: s.recommendation ?? "SATISFACTORY", reportSummary: "Infrastructure, laboratories and faculty records were seen and found broadly in line with the application. Minor observations noted for the institution (synthetic report).", reportReference: `EVC/${tag}/2026`, reportSubmittedAt: day(now, s.reportAt) } });
+        await prisma.$transaction((tx) => advanceToNextStage(tx, app.id, { actor: convenor, at: day(now, s.reportAt!) }, { outcome: "EVC_SATISFACTORY", remarks: "EVC report submitted: satisfactory.", reference: `EVC/${tag}/2026` }), { timeout: 30_000 });
       }
+    } else if (s.kind === "return") {
+      await returnForDeficiencies(scrutiny, app.id, s.message);
+    } else if (s.kind === "close") {
+      await prisma.$transaction(async (tx) => {
+        await advanceToNextStage(tx, app.id, { actor: senior, at: day(now, s.at) }, { outcome: "DECIDED", remarks: "Outcome recorded by the competent authority.", reference: `DEMO/DEC/${tag}` });
+        await transitionStatus(tx, app.id, "CLOSED", { actor: senior, reason: "Outcome recorded (synthetic case)." });
+        await tx.reviewAction.create({ data: { applicationId: app.id, actorId: senior.userId, actorName: senior.name, actorRole: senior.role, action: "DECISION", outcome: s.outcome, reason: "Scrutiny complete with no open findings; outcome recorded for the demo record.", reference: `DEMO/DEC/${tag}`, createdAt: day(now, s.at) } });
+      }, { timeout: 30_000 });
     }
   }
+  return app;
+}
+
+/** Background institutions, one case each (DEMO_DATASET=full, used by the automated tests). */
+export async function seedBackgroundCases(opts: { now: Date; regionIds: Map<string, string>; staff: Map<string, Actor> }) {
+  const institutionIds = new Map<string, string>();
+  for (const b of BACKGROUND) {
+    const inst = await prisma.institution.create({ data: { code: b.code, name: b.name, category: b.category, state: b.state, city: b.city, establishedYear: b.type === "NEW_INSTITUTION" ? 2026 : 2012, regionId: regionForState(b.state, opts.regionIds), programmes: { create: [{ name: b.programme, level: b.category.includes("Diploma") ? "Diploma" : b.programme.startsWith("Master") ? "PG" : "UG", approvedIntake: b.type === "NEW_INSTITUTION" ? 0 : 60, lastApprovedYear: b.type === "NEW_INSTITUTION" ? "N/A (new)" : "2026-27" }] } } });
+    institutionIds.set(b.code, inst.id);
+    const user = await prisma.user.create({ data: { email: `applicant.${b.code.slice(-4)}@pravah.demo`, name: `Principal, ${b.name}`, role: "APPLICANT", designation: `Authorised contact, ${b.name}`, institutionId: inst.id, passwordHash: await hashPassword(DEMO_PASSWORD) } });
+    await runCase(b, inst, toActor(user), opts);
+  }
   return institutionIds;
+}
+
+/**
+ * Compact demo (default): extra applications for the three story institutions, and their
+ * current scrutiny stages backdated so pendency, reminders and escalation have something to show.
+ */
+export async function seedStoryCases(opts: { now: Date; staff: Map<string, Actor> }) {
+  for (const c of STORY_CASES) {
+    const inst = await prisma.institution.findUniqueOrThrow({ where: { code: c.institutionCode } });
+    const user = await prisma.user.findFirstOrThrow({ where: { institutionId: inst.id, role: "APPLICANT" } });
+    const app = await runCase(c, inst, toActor(user), opts);
+    if (c.academicYear === "2026-27") {
+      // Last year's approval carried a time-bound condition that has not been met.
+      const bureau = opts.staff.get("bureau@pravah.demo")!;
+      await prisma.complianceItem.create({ data: { institutionId: inst.id, applicationId: app.id, kind: "UNDERTAKING", typeCode: "FACULTY_RECRUITMENT", title: "Appoint four regular faculty for the MBA programme", description: "Condition recorded with last year's outcome: appoint four regular faculty and submit appointment orders and joining reports.", dueDate: day(opts.now, -10), createdAt: day(opts.now, -128), createdById: bureau.userId, createdByName: bureau.name } });
+    }
+  }
+  // The story applications were scrutinised "today"; place them earlier in their timelines.
+  for (const [code, daysAgo] of [["PRV-INST-1027", 20], ["PRV-INST-1055", 6]] as const) {
+    const stage = await prisma.stageInstance.findFirst({ where: { status: "ACTIVE", stageCode: "SCRUTINY", application: { institutionCode: code, academicYear: ACADEMIC_YEAR } } });
+    if (!stage) continue;
+    const enteredAt = day(opts.now, -daysAgo);
+    await prisma.stageInstance.update({ where: { id: stage.id }, data: { enteredAt, dueAt: addDays(enteredAt, Math.round((stage.dueAt.getTime() - stage.enteredAt.getTime()) / 86_400_000)) } });
+  }
 }
 
 /** Undertakings and document validity items in every state (due soon, overdue, submitted, closed). */

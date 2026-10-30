@@ -23,7 +23,7 @@ import type { Actor } from "../src/lib/auth/permissions";
 import { ACTIVE_FINDING_STATUSES } from "../src/lib/domain";
 import { ACADEMIC_YEAR, APPLICATIONS, DEMO_PASSWORD, INSTITUTIONS, ISSUER_RECORDS, STAFF } from "./lib/demo-data";
 import { renderDoc } from "./lib/render";
-import { MONITORING_STAFF, regionForState, seedAlerts, seedBackgroundCases, seedComplianceItems, seedWorkflowConfig } from "./lib/monitoring-seed";
+import { MONITORING_STAFF, regionForState, seedAlerts, seedBackgroundCases, seedComplianceItems, seedStoryCases, seedWorkflowConfig } from "./lib/monitoring-seed";
 import { shutdownOcr } from "../src/lib/extraction/ocr";
 
 const CATEGORIES = [
@@ -105,11 +105,15 @@ const COMPLIANCE = [
 ];
 
 /**
- * Dataset size. The default compact demo has three applications that cover the main stories:
+ * Dataset size. The default compact demo has three institutions. Their main applications go
+ * through the real document pipeline:
  *   Meridian   — expired certificate → findings with evidence → rectification → revalidation
  *   Northfield — issuer verification mismatch → manual confirmation → forward
  *   Greenfield — draft → upload → checks → verification → forward → decision (and the AI demo)
- * DEMO_DATASET=full seeds all nine scenarios; the automated tests use it for broader coverage.
+ * and each gets workflow cases (scripts/lib/monitoring-seed.ts: EVC report due, an unscheduled
+ * visit after automatic routing, last year's closed approval with an overdue undertaking).
+ * DEMO_DATASET=full seeds all nine scenarios plus thirteen background institutions; the
+ * automated tests use it for broader coverage.
  */
 const COMPACT = ["meridian", "northfield", "greenfield"];
 const FULL = process.env.DEMO_DATASET === "full";
@@ -225,8 +229,14 @@ async function main() {
   }
 
   const now = new Date();
-  console.log("\nSeeding background cases across Regions and stages (no documents; timelines are sample configuration)…");
-  const backgroundIds = await seedBackgroundCases({ now, regionIds, staff });
+  let backgroundIds = new Map<string, string>();
+  if (FULL) {
+    console.log("\nSeeding background institutions across Regions and stages (no documents; timelines are sample configuration)…");
+    backgroundIds = await seedBackgroundCases({ now, regionIds, staff });
+  } else {
+    console.log("\nAdding workflow cases for the three institutions (no documents; timelines are sample configuration)…");
+    await seedStoryCases({ now, staff });
+  }
   const allInstitutionIds = new Map<string, string>([...institutions.map((i) => [i.code, instIds.get(i.slug)!] as [string, string]), ...backgroundIds]);
   await seedComplianceItems({ now, institutionIds: allInstitutionIds, staff });
   const sweep = await seedAlerts(now);
