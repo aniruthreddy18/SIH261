@@ -15,7 +15,7 @@ Pravah AI tracks every approval application from submission to the recorded outc
    - [Approval workflow and monitoring (PS 26262)](#approval-workflow-and-monitoring-ps-26262)
    - [Scrutiny-stage document intelligence](#scrutiny-stage-document-intelligence)
 2. [Quick start](#quick-start)
-3. [Deploy (Railway)](#deploy-railway)
+3. [Deploy (Render or Railway)](#deploy-render-or-railway)
 4. [Demo accounts](#demo-accounts)
 5. [Demo scenarios](#demo-scenarios)
 6. [Architecture](#architecture)
@@ -112,9 +112,13 @@ Other commands:
 | `npm test` | Unit + integration tests (Vitest) |
 | `npm run test:e2e` | End-to-end tests (Playwright; starts its own server on port 3100 with an isolated DB) |
 
-## Deploy (Railway)
+## Deploy (Render or Railway)
 
-Pravah AI is one long-running Node server with a SQLite database and an upload folder on disk, so it needs a host with a **persistent volume**. Serverless hosts such as Vercel or Netlify are not suitable. The repository is ready for [Railway](https://railway.com):
+Pravah AI is one long-running Node server with a SQLite database and an upload folder on disk, so it needs a host that runs a container; a **persistent volume** keeps the data across restarts. Serverless hosts such as Vercel or Netlify are not suitable. The repository is ready for **[Render](https://render.com)** and **[Railway](https://railway.com)** (both build the same `Dockerfile`).
+
+**Render:** New → **Blueprint** → this repository (Render reads `render.yaml`). The free instance works for a demo — it sleeps when idle and re-creates the demo data on every restart; a paid instance with a disk at `/data` keeps data. See [`docs/DEPLOY_RENDER.md`](docs/DEPLOY_RENDER.md).
+
+**Railway:**
 
 1. New Project → **Deploy from GitHub repo** → this repository (Railway reads `railway.json` and builds the `Dockerfile`).
 2. Add a **Volume** to the service with mount path **`/data`** (database and uploads live there).

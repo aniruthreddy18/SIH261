@@ -1,0 +1,13 @@
+# Render Blueprint: Render → New → Blueprint → this repository.
+# Builds the same Dockerfile as Railway. The free instance has no persistent disk, so the demo
+# database is re-created (migrated and seeded) whenever the service restarts or wakes from sleep.
+# For data that survives restarts, switch the plan to "starter" and add a disk mounted at /data
+# (see docs/DEPLOY_RENDER.md).
+services:
+  - type: web
+    name: pravah-ai
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /login
+    autoDeploy: true
