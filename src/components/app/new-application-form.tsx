@@ -7,6 +7,7 @@ import { createApplicationAction } from "@/app/actions/workflow";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/input";
+import { APPLICATION_TYPES, APPLICATION_TYPE_LABELS, type ApplicationType } from "@/lib/workflow/stages";
 
 interface Inst { id: string; code: string; name: string; category: string; programmes: { name: string; level: string; intake: number }[] }
 
@@ -15,6 +16,7 @@ export function NewApplicationForm({ institutions, templates, defaultContact, po
   const [instId, setInstId] = useState(institutions.length === 1 ? institutions[0].id : "");
   const inst = useMemo(() => institutions.find((i) => i.id === instId), [instId, institutions]);
   const [template, setTemplate] = useState(templates[0]?.code ?? "");
+  const [appType, setAppType] = useState<ApplicationType>("EXTENSION_OF_APPROVAL");
   const [programmes, setProgrammes] = useState(inst?.programmes ?? [{ name: "", level: "UG", intake: 60 }]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +35,7 @@ export function NewApplicationForm({ institutions, templates, defaultContact, po
     const r = await createApplicationAction({
       institutionId: instId,
       templateCode: template,
+      applicationType: appType,
       institutionName: String(fd.get("institutionName")),
       institutionCode: String(fd.get("institutionCode")),
       institutionCategory: String(fd.get("institutionCategory")),
@@ -101,7 +104,12 @@ export function NewApplicationForm({ institutions, templates, defaultContact, po
         <Card>
           <CardHeader title="Application type" />
           <CardBody className="space-y-3">
-            <Field label="Template" htmlFor="template">
+            <Field label="Approval type" htmlFor="applicationType" hint="Decides the processing stages: scrutiny, expert visit (EVC), SAC/SHC and the competent authority.">
+              <Select id="applicationType" value={appType} onChange={(e) => setAppType(e.target.value as ApplicationType)}>
+                {APPLICATION_TYPES.map((t) => <option key={t} value={t}>{APPLICATION_TYPE_LABELS[t]}</option>)}
+              </Select>
+            </Field>
+            <Field label="Document checklist" htmlFor="template">
               <Select id="template" value={template} onChange={(e) => setTemplate(e.target.value)}>
                 {templates.map((t) => <option key={t.code} value={t.code}>{t.name}</option>)}
               </Select>

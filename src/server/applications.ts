@@ -5,6 +5,7 @@ import { deriveApplicationStatus } from "@/lib/validation/status";
 import { canTransition, isMachineStatus } from "@/lib/workflow/transitions";
 import { prisma, type Tx } from "./db";
 import { recordAudit } from "./audit";
+import { APPLICATION_TYPES } from "@/lib/workflow/stages";
 
 /** Transition an application's status, rejecting anything the state machine does not allow. */
 export async function transitionStatus(
@@ -58,6 +59,8 @@ async function nextReference(tx: Tx, academicYear: string): Promise<string> {
 export const CreateApplicationSchema = z.object({
   institutionId: z.string().min(1),
   templateCode: z.string().min(1),
+  // The approval type decides the processing pathway (stage combination) when it is submitted.
+  applicationType: z.enum(APPLICATION_TYPES).default("EXTENSION_OF_APPROVAL"),
   institutionName: z.string().trim().min(3).max(200),
   institutionCode: z.string().trim().max(50).optional().transform((v) => v || null),
   institutionCategory: z.string().trim().min(2).max(100),
@@ -91,6 +94,7 @@ export async function createApplication(actor: Actor, input: CreateApplicationIn
         reference,
         institutionId: institution.id,
         templateId: template.id,
+        applicationType: data.applicationType,
         institutionName: data.institutionName,
         institutionCode: data.institutionCode,
         institutionCategory: data.institutionCategory,
@@ -105,7 +109,7 @@ export async function createApplication(actor: Actor, input: CreateApplicationIn
       },
     });
     await tx.statusChange.create({ data: { applicationId: app.id, toStatus: "DRAFT", actorId: actor.userId, actorLabel: actor.name, reason: "Application created", createdAt: opts.createdAt } });
-    await recordAudit({ actor, eventType: "APPLICATION_CREATED", action: `Application ${reference} created (${template.name})`, applicationId: app.id, after: { reference, institution: data.institutionName, template: template.code, academicYear: data.academicYear } }, tx);
+    await recordAudit({ actor, eventType: "APPLICATION_CREATED", action: `Application ${reference} created (${template.name})`, applicationId: app.id, after: { reference, institution: data.institutionName, template: template.code, applicationType: data.applicationType, academicYear: data.academicYear } }, tx);
     return app;
   });
 }
