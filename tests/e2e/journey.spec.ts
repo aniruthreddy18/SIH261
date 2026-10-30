@@ -84,6 +84,39 @@ test("keeps institutions and AICTE staff on separate sign-in portals", async ({ 
   await expect(page).toHaveURL(/\/$/);
 });
 
+/**
+ * Section tabs change only the query string. With route-level loading.tsx boundaries, the
+ * production build dropped about half of these client navigations, so click every tab for real.
+ */
+test("section tabs navigate on click in both portals", async ({ page }) => {
+  const sections = page.locator("nav[aria-label='Application sections'] a");
+  // One click per tab, no retries: a dropped navigation must fail the test.
+  const clickTab = async (label: string, url: RegExp) => {
+    await sections.filter({ hasText: label }).first().click();
+    await expect(page).toHaveURL(url, { timeout: 8_000 });
+    await page.waitForLoadState("networkidle");
+  };
+  const hydrated = () => page.waitForFunction(() => {
+    const a = document.querySelector("nav[aria-label='Application sections'] a");
+    return !!a && Object.keys(a).some((k) => k.startsWith("__reactFiber"));
+  });
+
+  await signIn(page, "applicant.greenfield@pravah.demo");
+  await page.goto(`/portal/applications/${await appId("Greenfield")}`);
+  await hydrated();
+  for (const [label, view] of [["Documents", "documents"], ["Check results", "results"], ["History", "history"], ["Overview", "overview"], ["Documents", "documents"]]) {
+    await clickTab(label, new RegExp(`view=${view}$`));
+  }
+  await expect(page.getByText("Required documents")).toBeVisible();
+
+  await signIn(page, "scrutiny@pravah.demo");
+  await page.goto(`/applications/${await appId("Meridian")}`);
+  await hydrated();
+  for (const [label, tab] of [["Documents", "documents"], ["Validation", "validation"], ["Findings", "findings"], ["Issuer verification", "verification"], ["History", "history"], ["Overview", "overview"]]) {
+    await clickTab(label, new RegExp(`tab=${tab}$`));
+  }
+});
+
 test("enforces role permissions and cross-institution isolation on the server", async ({ page }) => {
   const sunrise = await appId("Sunrise");
   await signIn(page, "applicant.meridian@pravah.demo");

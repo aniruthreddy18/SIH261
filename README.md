@@ -13,18 +13,19 @@ Pravah AI helps authorised personnel validate institutional applications and the
 
 1. [What it does](#what-it-does)
 2. [Quick start](#quick-start)
-3. [Demo accounts](#demo-accounts)
-4. [Demo scenarios](#demo-scenarios)
-5. [Architecture](#architecture)
-6. [Tech stack](#tech-stack)
-7. [Environment variables](#environment-variables)
-8. [Documents, extraction and OCR](#documents-extraction-and-ocr)
-9. [Validation rules engine](#validation-rules-engine)
-10. [Issuer verification adapters](#issuer-verification-adapters)
-11. [Tests](#tests)
-12. [Security](#security)
-13. [Troubleshooting](#troubleshooting)
-14. [Known limitations](#known-limitations)
+3. [Deploy (Railway)](#deploy-railway)
+4. [Demo accounts](#demo-accounts)
+5. [Demo scenarios](#demo-scenarios)
+6. [Architecture](#architecture)
+7. [Tech stack](#tech-stack)
+8. [Environment variables](#environment-variables)
+9. [Documents, extraction and OCR](#documents-extraction-and-ocr)
+10. [Validation rules engine](#validation-rules-engine)
+11. [Issuer verification adapters](#issuer-verification-adapters)
+12. [Tests](#tests)
+13. [Security](#security)
+14. [Troubleshooting](#troubleshooting)
+15. [Known limitations](#known-limitations)
 
 See also: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/FEATURES.md`](docs/FEATURES.md) (implemented vs. future) · [`docs/DEMO.md`](docs/DEMO.md) (5-minute demo script).
 
@@ -90,6 +91,16 @@ Other commands:
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript |
 | `npm test` | Unit + integration tests (Vitest) |
 | `npm run test:e2e` | End-to-end tests (Playwright; starts its own server on port 3100 with an isolated DB) |
+
+## Deploy (Railway)
+
+Pravah AI is one long-running Node server with a SQLite database and an upload folder on disk, so it needs a host with a **persistent volume**. Serverless hosts such as Vercel or Netlify are not suitable. The repository is ready for [Railway](https://railway.com):
+
+1. New Project → **Deploy from GitHub repo** → this repository (Railway reads `railway.json` and builds the `Dockerfile`).
+2. Add a **Volume** to the service with mount path **`/data`** (database and uploads live there).
+3. Settings → Networking → **Generate Domain**, then open the URL.
+
+On first start the container applies migrations and seeds the demo data; later deploys keep existing data. No variables are required. See [`docs/DEPLOY_RAILWAY.md`](docs/DEPLOY_RAILWAY.md) for details, optional settings and how to reset the demo. Note that with `DEMO_MODE=true` anyone with the link can sign in with the demo accounts: use synthetic data only.
 
 ## Demo accounts
 
@@ -244,7 +255,7 @@ The executor applies a per-attempt timeout and bounded retries (at most 5 attemp
 |---|---|---|
 | Unit (65) | `npm test` | Date parsing, normalisation, field extraction, upload validation, every rule check type, status derivation, transitions, run diff, verification adapters (all outcomes, timeout, bounded retries), permissions, anomaly detection, AI fallback (tokenizer ids/offsets, each acceptance safeguard, rules treating AI values as unconfirmed, and the real model on the sample PDFs — skipped if the model is not installed) |
 | Integration (26) | `npm test` | Real SQLite DB seeded through the real pipeline: auth and rate limiting, isolation, application creation, upload rejection, PDF/PNG/scanned-PDF processing, validation persistence, corrections, verification (outage, unsupported, manual), review reasons, rectification (unrelated findings preserved, corrected findings cleared), forward/decision, append-only audit, report redaction |
-| E2E (8) | `npm run test:e2e` | Sign-in failures, separate sign-in portals, server-side RBAC and cross-institution isolation, upload rejection, the full journey (findings → rectification → replacement → revalidation diff → simulated verification → forward → recorded decision → audit trail → PDF report), upload to closing (Greenfield draft → uploads → checks → verification → forward → decision → closed), issuer mismatch (forward blocked until a manual confirmation, then closed), and the AI fallback (prose certificate → AI suggestions → review → officer confirmation → PASS; skipped without the model) |
+| E2E (9) | `npm run test:e2e` | Runs against a production build. Sign-in failures, separate sign-in portals, section tabs navigating on click in both portals, server-side RBAC and cross-institution isolation, upload rejection, the full journey (findings → rectification → replacement → revalidation diff → simulated verification → forward → recorded decision → audit trail → PDF report), upload to closing (Greenfield draft → uploads → checks → verification → forward → decision → closed), issuer mismatch (forward blocked until a manual confirmation, then closed), and the AI fallback (prose certificate → AI suggestions → review → officer confirmation → PASS; skipped without the model) |
 
 ## Security
 
